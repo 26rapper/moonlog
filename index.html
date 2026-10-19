@@ -19,7 +19,7 @@
 <div class="wrap" id="first" data-state="wait">
   <header class="bar"><b class="mark" id="siteName"><span class="wm-en">Moonlog</span><span class="wm-ko">문로그</span></b><span class="status" id="topRight">다음 기록 밤 9시 20분</span></header>
 
-  <div class="window" id="window" data-weather="none">
+  <div class="window hide-img" id="window" data-weather="none"><!-- 사진은 그 상태의 얼굴이 받아진 뒤에 나타난다(showImgs) -->
     <img id="photo" src="assets/face/deadpan.webp" alt="크림빛 콩 피규어 — 무표정" width="1743" height="902">
     <img id="face" class="face" src="assets/face/deadpan.webp" alt="" width="1743" height="902">
     <canvas id="wcanvas" aria-hidden="true"></canvas>
@@ -619,7 +619,8 @@ function openBody(j, row = LAST, still = row !== LAST) {
     untilHTML() + pickButtons(addDays(LAST.date, 1), TEXT.nextHead) + `<span class="note">${esc(TEXT.pickNote)}</span></div>`;
 }
 /* 열 때 움직임 — t(ms) 한 점의 모습(디자인 3판 §1 · §2).
-   사진: 흐림이 1.2초에 걷히고 1.06배 → 1배, 0.9초부터 0.6초 동안 무표정 위에 그날 얼굴이 겹쳐 나타난다.
+   사진: 누르는 순간(t=0)부터 그날 얼굴 — 흐림이 1.2초에 걷히고 1.06배 → 1배(오너 2026-10-20: 많이 번 날 락 손이 바로
+   나와야 한다 — 무표정이 먼저 보이고 0.9초 뒤 겹쳐 나오던 것을 없앴다).
    LED: 0~0.9초 꺼진 판(+88.8% 꼴) → 0.9초 그날 칸에 8 을 흐린 크림으로 → 1.18초 값을 켜고 두 번 꿈뻑.
    금액은 1.1초 굴러 올라가고 맞힘 줄은 1.1초 뒤 떠오른다. 날씨는 1.5초에 들어온다. 움직임 줄이기면 끝 모습으로 바로 */
 const rise = (sel, t) => { const el = $(sel); if (!el) return; const k = easeOut(t / 700);
@@ -637,7 +638,7 @@ function ledAt(t, live) {
 function frameAt(t, live = false) {
   const e1 = easeOut(t / 1200), e2 = Math.min(1, t / 1500), e3 = easeOut(t / 1100);
   photoLook(14 * (1 - e1), 0.5 + (lightOf(LAST.weather) - 0.5) * e1, 1.06 - 0.06 * e1);   // 끝 밝기 = 그날 빛(3판-b)
-  setFace(faceOf(LAST.weather), clamp01((t - 900) / 600));
+  setFace(faceOf(LAST.weather), 1);
   $('#fog').style.opacity = (1 - e1).toFixed(3);
   $('#veil').style.opacity = Math.max(0, 1 - t / 400).toFixed(3);
   $('#veil').hidden = t >= 400;
@@ -986,6 +987,14 @@ function render(data) {
   if (HASH.has('back') && $('#pastBack')) $('#pastBack').click();
 }
 
+/* 첫 화면 — 창 사진은 처음에 투명(hide-img)이고, 그 상태의 얼굴 src 가 정해져 받아진 뒤 0.25초에 나타난다.
+   HTML 기본 src(무표정)가 기다릴 때 · 연 뒤 화면에서 먼저 번쩍 비치지 않게(오너 2026-10-20) */
+function showImgs() {
+  const w = $('#window');
+  if (!w.classList.contains('hide-img')) return;
+  Promise.all(['#photo', '#face'].map(s => $(s).decode ? $(s).decode().catch(() => {}) : null))
+    .then(() => w.classList.remove('hide-img'));
+}
 async function load() {
   try {
     const got = await Promise.all(FILES.map(f => fetch(`public/${f}.json`, {cache: 'no-cache'}).then(r => {
@@ -994,11 +1003,15 @@ async function load() {
     })));
     const data = {};
     FILES.forEach((f, i) => { data[f] = got[i]; });
+    // 그날 얼굴 사진을 먼저 받아 둔다 — 열기를 누르는 순간 바로 뜨게
+    const rows0 = (data.scene && data.scene.rows) || [];
+    if (rows0.length) new Image().src = FACE_SRC(faceOf(rows0[rows0.length - 1].weather));
     render(data);
   } catch (e) {
     $('#state').innerHTML = `<p class="voice">${esc(TEXT.failed)}</p>`;
     renderFoot(null);
   }
+  showImgs();
 }
 
 if (HERO_FRAME === 'center') $('#window').classList.add('center');

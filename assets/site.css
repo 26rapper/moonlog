@@ -45,7 +45,9 @@ button { font-family: var(--f-ui); }
           background: radial-gradient(ellipse 60% 70% at 52% 50%, #3a2717, #0e0b09 72%);
           box-shadow: 0 30px 80px -30px rgba(0,0,0,0.9), inset 0 0 0 1px rgba(243,238,231,0.06); }
 .window img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; object-position: 52% 50%;
-              transform: scale(1.1); transform-origin: 52% 56%; }
+              transform: scale(1.1); transform-origin: 52% 56%; transition: opacity .25s ease; }
+/* 처음엔 사진을 숨겼다가 그 상태의 얼굴이 받아지면 0.25초에 나타난다 — 기본 무표정이 먼저 비치지 않게(오너 2026-10-20) */
+.window.hide-img img { opacity: 0 !important; }
 .window img.face { opacity: 0; }
 .window canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .fogl { position: absolute; inset: -20%; pointer-events: none;

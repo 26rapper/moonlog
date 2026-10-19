@@ -1,0 +1,16 @@
+{
+ "as_of": "2026-10-19",
+ "started": "2026-10-14",
+ "start_usd": 10000,
+ "equity_usd": 11042,
+ "day": 5,
+ "days_total": 60,
+ "total_pct": 10.42,
+ "worst_drop_pct": -1.11,
+ "closed": 78,
+ "won": 49,
+ "won_share": 62.8,
+ "btc_week_start": "2026-10-19",
+ "btc_hold_week_pct": 1.5,
+ "btc_hold_prev_week_pct": -2.44
+}

@@ -1,0 +1,63 @@
+{
+ "as_of": "2026-10-19",
+ "season_verdict": null,
+ "rows": [
+  {
+   "date": "2026-10-15",
+   "day": 1,
+   "change_pct": 3.82,
+   "weather": "clear_star",
+   "pose": "sip",
+   "act": "done",
+   "sprout": 0,
+   "events": []
+  },
+  {
+   "date": "2026-10-16",
+   "day": 2,
+   "change_pct": -0.68,
+   "weather": "rain",
+   "pose": "melt",
+   "act": "done",
+   "sprout": 0,
+   "events": [
+    "new_low"
+   ]
+  },
+  {
+   "date": "2026-10-17",
+   "day": 3,
+   "change_pct": -0.43,
+   "weather": "rain",
+   "pose": "melt",
+   "act": "done",
+   "sprout": 0,
+   "events": [
+    "new_low"
+   ]
+  },
+  {
+   "date": "2026-10-18",
+   "day": 4,
+   "change_pct": 0.2,
+   "weather": "clear",
+   "pose": "sip",
+   "act": "done",
+   "sprout": 0,
+   "events": []
+  },
+  {
+   "date": "2026-10-19",
+   "day": 5,
+   "change_pct": 7.35,
+   "weather": "clear_star",
+   "pose": "sip",
+   "act": "done",
+   "sprout": 0,
+   "events": [
+    "new_high",
+    "vs_win"
+   ]
+  }
+ ]
+}

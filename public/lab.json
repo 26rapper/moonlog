@@ -1,0 +1,509 @@
+{
+ "as_of": "2026-10-19",
+ "rows": [
+  {
+   "label": "실험 31",
+   "title": "돈치안 선물 + 펀딩 조건부 배율",
+   "kind": "stopped",
+   "result": "중단"
+  },
+  {
+   "label": "실험 26-a-i",
+   "title": "시각·요일 힌트 빼 보기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-a-h",
+   "title": "같은 낙폭에서 다시 재기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-a-g",
+   "title": "보수적으로 배우기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-a-f",
+   "title": "힌트 절반 덜어내기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-a-e",
+   "title": "선물 이자 힌트",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-a-d",
+   "title": "남보다 오를 종목을 배우기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-a-c",
+   "title": "모형이 배우는 정답을 4시간 뒤로",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-a-b",
+   "title": "모형 열 개 평균",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-a-a",
+   "title": "바이낸스 줄만으로 배우기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 30",
+   "title": "관심 급증",
+   "kind": "stopped",
+   "result": "중단"
+  },
+  {
+   "label": "실험 26-z",
+   "title": "학습 기간 늘리기·최근 가중",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-y",
+   "title": "비용 띠 넓히기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-x",
+   "title": "한 시간마다 손절·익절 네 가지",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-s2",
+   "title": "자료를 API 판으로 갈아 다시 재기",
+   "kind": "stopped",
+   "result": "중단"
+  },
+  {
+   "label": "실험 26-u",
+   "title": "거래소 표시 칸 하나",
+   "kind": "stopped",
+   "result": "중단"
+  },
+  {
+   "label": "실험 26-q",
+   "title": "아직 안 닫힌 계약 자료 다섯 힌트",
+   "kind": "pass",
+   "result": "기준 넘음"
+  },
+  {
+   "label": "실험 26-n",
+   "title": "네 시간 안에서 어떻게 움직였나를 힌트로 주면",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-v-b",
+   "title": "크게 거는 데 뚜껑 씌우기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-v-w",
+   "title": "/26-w 확신만큼 크게 걸기 · 한쪽 방향만 깐깐하게",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-o",
+   "title": "전체 코인 속 순위를 힌트로 주면",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-s",
+   "title": "세 손잡이를 한꺼번에 맞추기",
+   "kind": "pass",
+   "result": "기준 넘음"
+  },
+  {
+   "label": "실험 28",
+   "title": "주간 시계열 모멘텀",
+   "kind": "stopped",
+   "result": "중단"
+  },
+  {
+   "label": "실험 26-p",
+   "title": "여덟 시간보다 더 들고 있어 보기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-m-b",
+   "title": "기준을 0.65 보다 더 올려 보기",
+   "kind": "watched",
+   "result": "자료만 살핌"
+  },
+  {
+   "label": "실험 26-r",
+   "title": "시장이 올라 있을 때 몸을 줄여 보기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-m",
+   "title": "얼마나 확실할 때 들어갈까",
+   "kind": "pass",
+   "result": "기준 넘음"
+  },
+  {
+   "label": "실험 26-k-l",
+   "title": "살 종목을 넓히거나 자리를 늘리기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-j",
+   "title": "",
+   "kind": "pass",
+   "result": "공개용으로 고치는 중"
+  },
+  {
+   "label": "실험 26-i",
+   "title": "낙폭 통제",
+   "kind": "pass",
+   "result": "기준 넘음"
+  },
+  {
+   "label": "실험 26-h",
+   "title": "8시간 들고 있기 · B군",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-g",
+   "title": "안 본 종목 B군 103개",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-f",
+   "title": "국면 필터 + 자리 상한",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-e",
+   "title": "안 본 구간 재판정",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-d",
+   "title": "실측 비용 재채점",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-c",
+   "title": "확률 비례 크기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26-b",
+   "title": "기계학습 방향 예측 — 지평·매매 환산",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 26",
+   "title": "기계학습 방향 예측",
+   "kind": "watched",
+   "result": "자료만 살핌"
+  },
+  {
+   "label": "실험 25",
+   "title": "짝 매매",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 24-b",
+   "title": "업비트 호가 차익",
+   "kind": "watched",
+   "result": "자료만 살핌"
+  },
+  {
+   "label": "실험 20",
+   "title": "공지 사건 연구",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 22",
+   "title": "변동성 돌파(VB) 선물판",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 21-f",
+   "title": "2026 칸 훑기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 21-e",
+   "title": "적응형 방향",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 21-d",
+   "title": "내리면 버는 쪽만·손절 없음·시간만 보고 끊기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 21-c",
+   "title": "거울판 — OI 급감 뒤 같은 방향 지속",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 21",
+   "title": "OI 급감 뒤 되돌림",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 19",
+   "title": "거래소 간 선행",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 16",
+   "title": "시간대 효과",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 17",
+   "title": "장중 거래량 돌파",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 15",
+   "title": "호가·체결로 급등 전에 들어가기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 14",
+   "title": "이평선 교차 양방향 선물",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 1-b",
+   "title": "-b 유튜버 이평선 전 종목 하루치 훑기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 13",
+   "title": "그냥 들고 있기 + 내리는 장 쉬기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 12",
+   "title": "코인 갈아타기(횡단면 모멘텀) 복제",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "번호 없는 실험",
+   "title": "돈치안 앙상블 복제",
+   "kind": "ended_none",
+   "result": "중단"
+  },
+  {
+   "label": "번호 없는 실험",
+   "title": "김치 프리미엄 신호",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "번호 없는 실험",
+   "title": "L4 선물 한쪽 쏠림이 먼저 오나",
+   "kind": "stopped",
+   "result": "중단"
+  },
+  {
+   "label": "번호 없는 실험",
+   "title": "돈치안 비트코인 선물판 — 몇 배로 걸기·양쪽 대칭",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "번호 없는 실험",
+   "title": "양쪽 걸기 가짜 돈 확인",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 11",
+   "title": "다종목 돈치안 포트폴리오",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 10",
+   "title": "S3 정리·관리 설계",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 9",
+   "title": "신호 시점 미시구조",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 6-d",
+   "title": "실험 6-D — 폭등일 역추적",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 8",
+   "title": "선물 이자 미리 알기",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 7-c",
+   "title": "실험 7-C — 횡단면 순위 이동 속도",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 7-b",
+   "title": "실험 7-B — B6 하방 비대칭",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 7-a",
+   "title": "실험 7-A — 횡단면 상대강도",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 6-b",
+   "title": "실험 6-B — 폭발 움직임 포착 전략",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 7",
+   "title": "횡단면 상대강도",
+   "kind": "stopped",
+   "result": "중단"
+  },
+  {
+   "label": "실험 6",
+   "title": "사냥터 확장과 큰 상승일 부검",
+   "kind": "ended_none",
+   "result": "중단"
+  },
+  {
+   "label": "실험 5-v",
+   "title": "실험 5-V — 지휘부 검증",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 5",
+   "title": "험한 날 걸름 1단계",
+   "kind": "stopped",
+   "result": "중단"
+  },
+  {
+   "label": "실험 4",
+   "title": "평균으로 되돌아오기",
+   "kind": "stopped",
+   "result": "중단"
+  },
+  {
+   "label": "실험 36",
+   "title": "m2-E-A 검증",
+   "kind": "fail",
+   "result": "기준 못 넘음"
+  },
+  {
+   "label": "실험 35",
+   "title": "변동성 뚫기 맞힌 비율 올리기",
+   "kind": "stopped",
+   "result": "중단"
+  },
+  {
+   "label": "실험 3",
+   "title": "변동성 돌파",
+   "kind": "stopped",
+   "result": "중단"
+  },
+  {
+   "label": "실험 2",
+   "title": "돈치안 타도 캠페인",
+   "kind": "stopped",
+   "result": "중단"
+  },
+  {
+   "label": "실험 1",
+   "title": "이동평균 교차(20/60) × 줄 선 모양",
+   "kind": "pass",
+   "result": "기준 넘음"
+  },
+  {
+   "label": "실험 17",
+   "title": "",
+   "kind": "watched",
+   "result": "자료만 살핌"
+  },
+  {
+   "label": "실험 6-b0",
+   "title": "",
+   "kind": "watched",
+   "result": "자료만 살핌"
+  },
+  {
+   "label": "실험 6-c",
+   "title": "",
+   "kind": "pass",
+   "result": "기준 넘음"
+  },
+  {
+   "label": "실험 6-c2",
+   "title": "",
+   "kind": "watched",
+   "result": "자료만 살핌"
+  },
+  {
+   "label": "실험 6-c3",
+   "title": "",
+   "kind": "watched",
+   "result": "자료만 살핌"
+  }
+ ]
+}

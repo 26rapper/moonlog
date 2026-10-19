@@ -1,0 +1,17 @@
+{
+ "as_of": "2026-10-19",
+ "rows": [
+  {
+   "week_start": "2026-10-12",
+   "kong_pct": 2.86,
+   "btc_pct": -2.44,
+   "trades": 57
+  },
+  {
+   "week_start": "2026-10-19",
+   "kong_pct": 7.35,
+   "btc_pct": 1.5,
+   "trades": 21
+  }
+ ]
+}

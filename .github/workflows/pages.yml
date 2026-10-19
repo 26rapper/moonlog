@@ -1,0 +1,37 @@
+# 공개 사이트 배포 — **공개용 따로 저장소**에 이 폴더(site/)를 통째로 옮긴 뒤 쓰는 파일이다.
+# 이 저장소(트레이딩 봇, 비공개)에서는 돌지 않는다(.github 가 저장소 뿌리에 있어야 돈다).
+#
+# 오너가 할 일(구현 창은 준비만): ① 공개 저장소 만들기 ② Settings → Pages → Source: GitHub Actions
+# ③ 이 PC 의 밤 배치가 public/*.json 을 그 저장소에 push 하도록 배포 키(그 저장소 하나만 쓰기) 만들기.
+# 자세한 순서는 README.md.
+
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

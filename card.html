@@ -120,11 +120,11 @@ const usdSigned = n => Math.round(n) === 0 ? '그대로' : (n > 0 ? '+' : '−')
 /* ── LED — 사이트와 글자째 같은 꼴(시험이 견준다). 카드는 정지 화면이라 열기 움직임 없이 끝 모습만 ── */
 const LED_OFF = 'rgba(243,238,231,.06)';
 const LED_COLOR = {up: '#dcecbf', down: '#f2a46b', flat: '#f3eee7'};   // 연둣빛 크림 · 노을 주황 · 크림
-const LED_REST = 'rgba(243,238,231,.55)';                             // 쉰 날은 OFF 를 크림 55%로, 빛 번짐 없이(3판-b)
+const LED_REST = 'rgba(243,238,231,.55)';                             // 쉰 날은 oFF 를 크림 55%로, 빛 번짐 없이(3판-b)
 const LED_EIGHT = 'rgba(243,238,231,.32)';                            // 열 때 0.9초 — 그날 칸에 8 을 흐린 크림으로
 const LED_DARK = '+88.8%';            // 꺼진 판은 늘 이 꼴 — 칸 수로 결과(두 자리인지 · 소수 둘째인지)가 새지 않게
 const SEG = {'0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc',
-             '8': 'abcdefg', '9': 'abfgcd', '-': 'g', ' ': '', 'O': 'abcdef', 'F': 'aefg'};
+             '8': 'abcdefg', '9': 'abfgcd', '-': 'g', ' ': '', 'o': 'cdeg', 'F': 'aefg'};
 const SEGP = {a: 'M12 4 L48 4 L42 10 L18 10 Z', b: 'M50 6 L50 46 L44 42 L44 12 Z', c: 'M50 54 L50 94 L44 88 L44 58 Z',
               d: 'M12 96 L48 96 L42 90 L18 90 Z', e: 'M10 54 L10 94 L16 88 L16 58 Z', f: 'M10 6 L10 46 L16 42 L16 12 Z',
               g: 'M14 50 L20 45 L40 45 L46 50 L40 55 L20 55 Z'};
@@ -154,13 +154,15 @@ function ledHTML(str, c, o = {}) {
   const glow = c && c[0] === '#' && !o.noGlow ? ` style="filter:drop-shadow(0 0 12px ${c}59)"` : '';
   return `<span class="led${o.cls ? ' ' + o.cls : ''}"${glow}>` + ledTokens(str, o.sign !== false).map(t => ledGlyph(t, c)).join('') + '</span>';
 }
-const ledStr = c => c == null ? 'OFF' : pctOf(c);                    // 쉰 날은 '쉼' 글자 대신 OFF(부호 칸은 꺼진 채)
+const ledStr = c => c == null ? 'oFF' : pctOf(c);                    // 쉰 날은 '쉼' 글자 대신 oFF — 소문자 o 는 0 과 다른 꼴(부호 칸은 꺼진 채)
 
 /* 정정 — 사이트와 같은 글(디자인 정정줄 1판). 카드 ③ 맨 아래에 그 밤 나온 것만 */
 const fixesOf = D => (D && D.diary && D.diary.corrections) || [];
-const fixText = f => `${md(f.date)} ${pctOf(f.before)} → ${pctOf(f.after)}`;
+const fixText = f => f.kind === 'btc_week' ? `${md(f.date)} 주 비트코인 ${pct(f.before, 2)} → ${pct(f.after, 2)}`   // 주간 비트코인 정정(두 자리)
+  : `${md(f.date)} ${pctOf(f.before)} → ${pctOf(f.after)}`;
 const fixMore = n => `외 ${n}건 — 사이트 일지에`;
 const FIX_SAY = '어제 숫자 정정.';
+const FIX_SAY_WEEK = '비트코인 주간 숫자 정정.';   // 그 밤 정정이 주간 비트코인뿐일 때(어제 숫자가 아니라서)
 
 /* 그날 거래 줄(정리 · 이긴 것) — 원고 캡션 둘째 줄 */
 const tradesOf = (D, date) => ((D && D.trades_daily && D.trades_daily.rows) || []).find(r => r.date === date) || {};
@@ -214,24 +216,56 @@ function weather(kind, fog) {
   }
   return s + '</svg>';
 }
-/* 아래 장식 — 콩자리 작은 판(가림 구역 안이라 장식으로만, 읽혀야 할 글은 두지 않는다) */
+/* 아래 장식 — 60 Nights 초승달(디자인 뒷손질 2026-10-20). 점 배치는 사이트와 같은 MOON(시험이 글자째 견준다) —
+   사이트 판(358×236)을 카드 아래 칸(360×150)에 맞춰 줄인다(0.64배라 점 · 선은 그만큼 굵게). 달 그림자는 4% 로 더 옅게.
+   가림 구역 안이라 장식으로만, 읽혀야 할 글은 두지 않는다 */
+const MOON = (() => {
+  const C = {x: 166, y: 120, r: 98}, I = {x: 204, y: 100, r: 86}, N = 60, EXT = 30;
+  const dx = I.x - C.x, dy = I.y - C.y, d = Math.hypot(dx, dy), a = (C.r * C.r - I.r * I.r + d * d) / (2 * d), h = Math.sqrt(C.r * C.r - a * a);
+  const mx = C.x + a * dx / d, my = C.y + a * dy / d, P = [{x: mx + h * dy / d, y: my - h * dx / d}, {x: mx - h * dy / d, y: my + h * dx / d}];
+  if (P[0].y > P[1].y) P.reverse();                                   // P[0] = 위쪽 끝
+  const TAU = Math.PI * 2, ang = (o, p) => Math.atan2(p.y - o.y, p.x - o.x), norm = x => ((x % TAU) + TAU) % TAU;
+  // 바깥 호: C 위에서 P0 → P1, I 쪽을 지나지 않는 방향 · 안쪽 호: I 위에서 P1 → P0, C 쪽을 지나는 방향
+  const a0 = ang(C, P[0]), a1 = ang(C, P[1]), th = ang(C, I);
+  const ccw = norm(a1 - a0), dirO = norm(th - a0) < ccw ? -1 : 1, spanO = dirO === 1 ? ccw : TAU - ccw;
+  const b1 = ang(I, P[1]), b0 = ang(I, P[0]), ph = ang(I, C);
+  const ccw2 = norm(b0 - b1), dirI = norm(ph - b1) < ccw2 ? 1 : -1, spanI = dirI === 1 ? ccw2 : TAU - ccw2;
+  const LO = C.r * spanO, L = LO + I.r * spanI, pts = [];
+  let seed = 60;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for (let k = 0; k < N; k++) {
+    const s = (k + 0.5) / N * L;
+    let p;
+    if (s <= LO) { const t = a0 + dirO * s / C.r; p = {x: C.x + C.r * Math.cos(t), y: C.y + C.r * Math.sin(t)}; }
+    else { const u = b1 + dirI * (s - LO) / I.r; p = {x: I.x + I.r * Math.cos(u), y: I.y + I.r * Math.sin(u)}; }
+    pts.push({x: p.x + (rnd() - 0.5) * 4, y: p.y + (rnd() - 0.5) * 4});
+  }
+  for (let k = 0; k < EXT; k++) {                                     // 연장 — 바깥 둘레, 위쪽 끝에서 같은 방향으로
+    const t = a0 + dirO * (k + 0.5) / EXT * spanO;
+    pts.push({x: C.x + (C.r + 13) * Math.cos(t), y: C.y + (C.r + 13) * Math.sin(t), ext: true});
+  }
+  // 달 그림자(아직 안 찬 달) — 바깥 호 + 안쪽 호로 닫은 모양
+  const f = v => v.toFixed(1);
+  const shape = `M${f(P[0].x)} ${f(P[0].y)} A${C.r} ${C.r} 0 ${spanO > Math.PI ? 1 : 0} ${dirO === 1 ? 1 : 0} ${f(P[1].x)} ${f(P[1].y)} ` +
+                `A${I.r} ${I.r} 0 ${spanI > Math.PI ? 1 : 0} ${dirI === 1 ? 1 : 0} ${f(P[0].x)} ${f(P[0].y)} Z`;
+  return {C, I, N, MAX: N + EXT, pts, shape};
+})();
 function stars(lit, highlight) {
-  const r = sd(60), pts = [];
-  let s = '<svg viewBox="0 0 360 150" aria-hidden="true">', i;
-  for (i = 0; i < 60; i++) {
-    const t = -Math.PI + i * (2 * Math.PI / 60), dent = 14 * Math.exp(-Math.pow(t + Math.PI / 2, 2) / .22);
-    pts.push([180 + 120 * Math.cos(t) + (r() - .5) * 6, 78 + 46 * Math.sin(t) + dent + (r() - .5) * 6]);
-  }
-  lit = Math.max(0, Math.min(60, lit));
-  for (i = lit; i < 60; i++) s += `<circle cx="${pts[i][0].toFixed(1)}" cy="${pts[i][1].toFixed(1)}" r=".8" fill="#f3eee7" opacity=".14"></circle>`;
+  const P = MOON.pts, f = v => v.toFixed(1);
+  lit = Math.max(0, Math.min(MOON.MAX, lit));
+  let s = '<svg viewBox="0 0 358 236" aria-hidden="true"><defs><linearGradient id="mf" x1="0" y1="0" x2="1" y2="1">' +
+          '<stop offset="0" stop-color="#f6ecd4" stop-opacity=".04"></stop><stop offset="1" stop-color="#f6ecd4" stop-opacity=".01"></stop>' +
+          `</linearGradient></defs><path class="shade" d="${MOON.shape}" fill="url(#mf)" stroke="#f3eee7" stroke-opacity=".04" stroke-width=".9"></path>`;
+  let i;
+  for (i = lit; i < MOON.N; i++) s += `<circle class="later" cx="${f(P[i].x)}" cy="${f(P[i].y)}" r="1.2" fill="#f3eee7" opacity=".2"></circle>`;
   let d = '';
-  for (i = 0; i < lit; i++) d += (i ? 'L' : 'M') + pts[i][0].toFixed(1) + ' ' + pts[i][1].toFixed(1);
-  if (lit > 1) s += `<path d="${d}" fill="none" stroke="#f3eee7" stroke-opacity=".25" stroke-width=".8"></path>`;
+  for (i = 0; i < Math.min(lit, MOON.N); i++) d += (i ? 'L' : 'M') + f(P[i].x) + ' ' + f(P[i].y);
+  if (Math.min(lit, MOON.N) > 1) s += `<path d="${d}" fill="none" stroke="#f3eee7" stroke-opacity=".25" stroke-width="1.2"></path>`;
   for (i = 0; i < lit; i++) {
-    const on = i === lit - 1 && highlight;
-    s += `<circle cx="${pts[i][0].toFixed(1)}" cy="${pts[i][1].toFixed(1)}" r="${on ? 2.6 : 1.8}" fill="#fff3dc" opacity="${on ? 1 : .7}"></circle>`;
+    const on = i === lit - 1 && highlight, r = (on ? 4 : 2.8) * (P[i].ext ? 0.6 : 1);   // 연장 별은 작게
+    s += `<circle class="lit" cx="${f(P[i].x)}" cy="${f(P[i].y)}" r="${r.toFixed(2)}" fill="#fff3dc" opacity="${on ? 1 : .7}"></circle>`;
   }
-  if (highlight && lit) s += `<circle class="today" cx="${pts[lit - 1][0].toFixed(1)}" cy="${pts[lit - 1][1].toFixed(1)}" r="7" fill="none" stroke="#fff3dc" stroke-opacity=".5"></circle>`;
+  if (highlight && lit) s += `<circle class="today" cx="${f(P[lit - 1].x)}" cy="${f(P[lit - 1].y)}" r="11" fill="none" stroke="#fff3dc" stroke-opacity=".5"></circle>`;
   return s + '</svg>';
 }
 /* 창 — face = 얼굴 이름, look = 'fogged'(① 기록) · ''. ② ③ 의 사진에는 그날 빛(LIGHT, 3판-b)만 건다 */
@@ -250,7 +284,7 @@ function fixCard(D, row) {
   const list = fixesOf(D).filter(f => f.as_of === row.date);
   if (!list.length) return '';
   // 카드는 자리가 좁다 — 자세히는 첫 정정 한 줄, 더 있으면 '외 n건 — 사이트 일지에'(사이트 ③ 은 둘까지)
-  return `<span class="fix-say">${esc(FIX_SAY)}</span>` +
+  return `<span class="fix-say">${esc(list.every(f => f.kind === 'btc_week') ? FIX_SAY_WEEK : FIX_SAY)}</span>` +
     `<span class="fix">${esc(fixText(list[0]))} · ${esc(list[0].why)}</span>` +
     (list.length > 1 ? `<span class="fix">${esc(fixMore(list.length - 1))}</span>` : '');
 }

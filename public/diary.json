@@ -1,4 +1,15 @@
 {
  "as_of": "2026-10-19",
- "corrections": []
+ "corrections": [
+  {
+   "date": "2026-10-12",
+   "as_of": "2026-10-19",
+   "before": -2.44,
+   "after": -1.66,
+   "usd_before": null,
+   "usd_after": null,
+   "why": "비트코인 주간 창을 밤 9시 기준으로 맞춤",
+   "kind": "btc_week"
+  }
+ ]
 }

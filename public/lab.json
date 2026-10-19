@@ -8,6 +8,12 @@
    "result": "중단"
   },
   {
+   "label": "실험 26-aj",
+   "title": "모형 열 개가 가운데에 앉나",
+   "kind": "candidate",
+   "result": "지켜보는 중"
+  },
+  {
    "label": "실험 26-a-i",
    "title": "시각·요일 힌트 빼 보기",
    "kind": "fail",
@@ -94,8 +100,8 @@
   {
    "label": "실험 26-u",
    "title": "거래소 표시 칸 하나",
-   "kind": "stopped",
-   "result": "중단"
+   "kind": "candidate",
+   "result": "지켜보는 중"
   },
   {
    "label": "실험 26-q",
@@ -173,7 +179,7 @@
    "label": "실험 26-j",
    "title": "",
    "kind": "pass",
-   "result": "공개용으로 고치는 중"
+   "result": "기준 넘음"
   },
   {
    "label": "실험 26-i",

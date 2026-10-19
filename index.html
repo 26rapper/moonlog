@@ -43,7 +43,7 @@
     </section>
 
     <section class="sec" id="nightsSec" hidden>
-      <div class="row"><h2>Past Logs</h2><span>옆으로 넘기기</span></div>
+      <div class="row"><h2>Past Logs</h2><span>누르면 그날 기록</span></div>
       <div class="nights" id="nights"></div>
     </section>
 
@@ -79,9 +79,10 @@ const RELEASE = {h: 21, m: 20};     // 매일 이 한국 시각쯤 새 결과(�
 const FILES = ['site', 'summary', 'equity_daily', 'trades_daily', 'checks', 'thermometer', 'lab', 'diary', 'weeks', 'scene'];
 const SEASON_DAYS = 60;
 const FLAT = 0.10, BIG = 1.00;      // 장면 값 문턱 — tools.public_export 의 FLAT·BIG 과 같아야 한다(시험)
-/* 이 기기에만 — 마지막으로 연 날 · 찍은 답(날짜별) · 맞힌 날 연속 · 연 날 연속 */
+/* 이 기기에만 — 마지막으로 연 날 · 찍은 답(날짜별) · 맞힌 날 연속 · 연 날 연속 · 판정한 날마다 맞힘과 그때 연속(지난 기록 보기) */
 const KEYS = {opened: 'kong.opened', guess: 'kong.guess', gStreak: 'kong.guessStreak',
-              vStreak: 'kong.visitStreak', vDay: 'kong.visitDay'};
+              vStreak: 'kong.visitStreak', vDay: 'kong.visitDay', verdicts: 'kong.verdicts'};
+const VERDICT_KEEP = 120;           // 판정 기록은 최근 이만큼만(시즌 60 + 연장 30 넘게)
 const WEATHER_WORD = {clear_star: '별똥별', clear: '맑음', cloudy: '구름', rain: '비', storm: '폭우', closed: '쉼'};
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 /* 얼굴 다섯 장(1743×902 · 표식 없음) — 그날 날씨가 얼굴을 고른다(캐릭터_최종 · 문턱은 public_export 그대로).
@@ -118,9 +119,11 @@ const TEXT = {
   // 소제목 — 영문만(글자표와 같은 글꼴은 site.css, 디자인 영문 제목 지시 A). nextHead 는 찍기 단추 묶음의 화면 읽기 이름(보이지 않음)
   nextHead: '다음 로그 맞히기', nextEn: 'Next Log',
   starDue: n => `${n}번째 별은 열면 뜬다`,
-  finale: (n, when) => `${n}번째 별이 뜨는 ${when}밤, 미리 정한 기준을 넘었는지 발표. 넘으면 진짜 돈으로 넘어갈지 정한다. 못 넘어도 그대로 공개.`,
+  // 60 Nights 아래 한 줄(오너 글규칙 '짧게' — 디자인 다듬기 2026-10-20). 날을 모르면(시즌 전) 날 없이
+  finale: (n, when) => `${when ? `${when} 밤 ${n}번째 별` : `${n}번째 별이 뜨는 밤`} · 미리 정한 기준을 넘었는지 발표, 결과는 그대로 공개.`,
   extended: '연장전',
-  weeksTitle: 'This Week', kong: '문로그', btcName: '비트코인 그냥 들고 있기', btcNone: '이번 주 비트코인 시세 못 받음',
+  weeksTitle: 'Last 7 Nights', kong: '문로그', btcName: '비트코인 그냥 들고 있기', btcNone: '비트코인 시세 못 받음.',
+  finWeeks: '끝난 주', nightsWord: '밤',
   howTitle: 'How it works',
   ledgerHead: 'LOG · 어젯밤 9시보다',  // 높았을 때 · 낮았을 때가 무엇과 견준 값인지(디자인 대조 2026-10-19 · 영문 제목 A)
   dictTitle: n => `Glossary · ${n}`, dictAlt: '흔히 부르는 말',
@@ -134,9 +137,9 @@ const TEXT = {
   fixWord: '정정',
   counter: '방문 수만 셈(쿠키 없음)',
   veil: d => `${d} 기록 도착`,
-  hours: h => `다음 기록 ${h}시간 뒤`,
-  duelDraw: '이번 주는 무승부.', duelNear: '이번 주는 지금 비슷함. 일요일 것까지 보고 판정.',
-  duelWin: who => `이번 주는 ${who} 승.`, duelLead: who => `이번 주는 ${who} 앞섬. 일요일 것까지 보고 판정.`,
+  // 최근 n밤 판정 한 줄(디자인 7밤 지시 — 데이터 우선 꼴). 차이 0.05%p 안은 비슷함. 밤 수는 범위 줄과 같은 last7.nights
+  // (시즌이 7밤보다 짧으면 '최근 5밤은 …' — 기획 2026-10-20)
+  duelNear: n => `최근 ${n}밤은 비슷함.`, duelLead: (who, n) => `최근 ${n}밤은 ${who} 앞섬.`,
 };
 /* 쉬운 말 사전 — 디자인 원고(쇼츠원고_쉬운말사전_초안 26편, 기획 확인 10-15)를 3판 말투로(디자인 2026-10-19): 표제는 명사 ·
    뜻은 '~다'(내용은 그대로) · 한마디는 내림 — 11 · 15번은 기획이 손본 사실 문장이라 뜻 뒤에 '~다' 로 붙임.
@@ -187,9 +190,10 @@ const usdSigned = n => Math.round(n) === 0 ? '그대로' : (n > 0 ? '+' : '−')
 /* 정정(디자인 정정줄 1판) — diary.json 의 corrections: 날짜 · 전 값 → 새 값 · 까닭 한 줄(정해진 문장만). 지우지 않는다.
    쇼츠 카드와 같은 글이다(시험이 견준다). 둘 넘으면 둘까지 쓰고 '외 n건 — 사이트 일지에' */
 const fixesOf = D => (D && D.diary && D.diary.corrections) || [];
-const fixText = f => `${md(f.date)} ${pctOf(f.before)} → ${pctOf(f.after)}`;
+const fixText = f => f.kind === 'btc_week' ? `${md(f.date)} 주 비트코인 ${pct(f.before, 2)} → ${pct(f.after, 2)}`   // 주간 비트코인 정정(두 자리)
+  : `${md(f.date)} ${pctOf(f.before)} → ${pctOf(f.after)}`;
 const fixMore = n => `외 ${n}건 — 사이트 일지에`;
-const fixOn = (D, date) => fixesOf(D).filter(f => f.date === date).slice(-1)[0] || null;   // 그날의 마지막 정정
+const fixOn = (D, date) => fixesOf(D).filter(f => f.date === date && f.kind !== 'btc_week').slice(-1)[0] || null;   // 그날의 마지막 정정(주간 비트코인 정정은 날 칸에 안 섞는다)
 const fixUsd = f => f.usd_before != null && f.usd_after != null && f.usd_before !== f.usd_after
   ? ` · ${usdWord(f.usd_before)} → ${usdWord(f.usd_after)}` : '';                                  // 금액은 일지 줄에만
 const easeOut = x => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
@@ -199,11 +203,11 @@ const clamp01 = x => Math.min(1, Math.max(0, x));
    칸: 부호 + 숫자 + 점 + %(카운트다운은 부호 없이 쌍점). 꺼진 토막은 크림 6%, 켜진 토막은 손익 색 + 빛. 쇼츠 카드와 같은 꼴(시험) ── */
 const LED_OFF = 'rgba(243,238,231,.06)';
 const LED_COLOR = {up: '#dcecbf', down: '#f2a46b', flat: '#f3eee7'};   // 연둣빛 크림 · 노을 주황 · 크림
-const LED_REST = 'rgba(243,238,231,.55)';                             // 쉰 날은 OFF 를 크림 55%로, 빛 번짐 없이(3판-b)
+const LED_REST = 'rgba(243,238,231,.55)';                             // 쉰 날은 oFF 를 크림 55%로, 빛 번짐 없이(3판-b)
 const LED_EIGHT = 'rgba(243,238,231,.32)';                            // 열 때 0.9초 — 그날 칸에 8 을 흐린 크림으로
 const LED_DARK = '+88.8%';            // 꺼진 판은 늘 이 꼴 — 칸 수로 결과(두 자리인지 · 소수 둘째인지)가 새지 않게
 const SEG = {'0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc',
-             '8': 'abcdefg', '9': 'abfgcd', '-': 'g', ' ': '', 'O': 'abcdef', 'F': 'aefg'};
+             '8': 'abcdefg', '9': 'abfgcd', '-': 'g', ' ': '', 'o': 'cdeg', 'F': 'aefg'};
 const SEGP = {a: 'M12 4 L48 4 L42 10 L18 10 Z', b: 'M50 6 L50 46 L44 42 L44 12 Z', c: 'M50 54 L50 94 L44 88 L44 58 Z',
               d: 'M12 96 L48 96 L42 90 L18 90 Z', e: 'M10 54 L10 94 L16 88 L16 58 Z', f: 'M10 6 L10 46 L16 42 L16 12 Z',
               g: 'M14 50 L20 45 L40 45 L46 50 L40 55 L20 55 Z'};
@@ -233,7 +237,7 @@ function ledHTML(str, c, o = {}) {
   const glow = c && c[0] === '#' && !o.noGlow ? ` style="filter:drop-shadow(0 0 12px ${c}59)"` : '';
   return `<span class="led${o.cls ? ' ' + o.cls : ''}"${glow}>` + ledTokens(str, o.sign !== false).map(t => ledGlyph(t, c)).join('') + '</span>';
 }
-const ledStr = c => c == null ? 'OFF' : pctOf(c);                    // 쉰 날은 '쉼' 글자 대신 OFF(부호 칸은 꺼진 채)
+const ledStr = c => c == null ? 'oFF' : pctOf(c);                    // 쉰 날은 '쉼' 글자 대신 oFF — 소문자 o 는 0 과 다른 꼴(부호 칸은 꺼진 채)
 const ledColor = row => row.change_pct == null ? LED_REST : LED_COLOR[tone(row.weather)];
 /* 숫자 뒤 빛 번짐 — 손익 색(22%), 구름은 크림, 쉰 날은 없음(3판-b) */
 const glowOf = row => row.change_pct == null ? 'none' : `radial-gradient(circle, ${LED_COLOR[tone(row.weather)]}38, transparent 70%)`;
@@ -437,12 +441,13 @@ function moneyOf(D, date) {          // {start, now, today} — 장부의 하루
   return {start, now: rows[i].usd, today: rows[i].usd - prev, prevNow: prev};
 }
 /* cls = 오늘 금액의 손익 색(up · down) — 카드 ② 와 같은 규칙(그날 날씨의 결, 디자인 대조 2026-10-19).
-   그대로인 날 · 쉰 날은 색 없이 지금처럼 */
-function moneyLine(m, withToday, bold = true, cls = '') {
+   그대로인 날 · 쉰 날은 색 없이 지금처럼. w = 끝 값 · 하루 증감 앞 낱말 — 지난 기록은 '그날 · 하루'(오늘 · 지금이 아니다) */
+const MONEY_WORDS = {today: ['지금', '오늘'], past: ['그날', '하루']};
+function moneyLine(m, withToday, bold = true, cls = '', w = MONEY_WORDS.today) {
   if (!m) return '';
   const B = (x, c = '') => bold ? `<b${c ? ` class="${c}"` : ''}>${x}</b>` : x;
-  return `가짜 돈 ${esc(usdWord(m.start))}로 시작 → 지금 ${B(esc(usdWord(m.now)))}` +
-         (withToday ? `<span class="m-sep"> · </span><span class="m-today">오늘 ${B(esc(usdSigned(m.today)), cls)}</span>` : '');
+  return `가짜 돈 ${esc(usdWord(m.start))}로 시작 → ${w[0]} ${B(esc(usdWord(m.now)))}` +
+         (withToday ? `<span class="m-sep"> · </span><span class="m-today">${w[1]} ${B(esc(usdSigned(m.today)), cls)}</span>` : '');
 }
 const todayCls = row => row.change_pct == null || tone(row.weather) === 'flat' ? '' : tone(row.weather);
 /* 한국 시각 → '새벽/아침/낮/저녁/밤 N시' — 봉 마감 여섯 시각(public_export.BAR_HOURS_KST)을 말로 */
@@ -473,7 +478,7 @@ const dateLine = row => `${md(row.date)} ${dow(row.date)}요일 · ${total()}일
 
 /* ── 맞힘 — 찍은 날의 change_pct 부호. 0.10 안은 무승부, 쉰 날은 없던 걸로(둘 다 연속 유지). 판정한 답은 지운다 ── */
 function judge(D, upTo) {
-  const g = guesses(), byDate = Object.fromEntries((D.scene.rows || []).map(r => [r.date, r.change_pct]));
+  const g = guesses(), byDate = Object.fromEntries((D.scene.rows || []).map(r => [r.date, r.change_pct])), seen = verdicts();
   let streak = gStreak(), last = null;
   for (const date of Object.keys(g).sort()) {
     if (date > upTo) continue;
@@ -484,12 +489,15 @@ function judge(D, upTo) {
     else if ((c > 0) === (pick === 'up')) { streak += 1; kind = 'hit'; }
     else { streak = 0; kind = 'miss'; }
     if (date === upTo) last = {kind, pick};
+    seen[date] = [kind, streak];                                // 지난 기록 보기의 맞힘 줄 — 그날 판정과 그때 연속
     delete g[date];
   }
   store.set(KEYS.guess, JSON.stringify(g));
   store.set(KEYS.gStreak, streak);
+  store.set(KEYS.verdicts, JSON.stringify(Object.fromEntries(Object.entries(seen).sort().slice(-VERDICT_KEEP))));
   return {result: last, streak};
 }
+function verdicts() { try { const v = JSON.parse(store.get(KEYS.verdicts) || '{}'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } }
 function verdictOf(j) {
   const keep = j.streak ? ` · ${j.streak}일 연속 유지` : '';
   // 맞힘 줄은 정해진 낱말뿐(글규칙 데이터우선 2절 — 반응 글은 지웠다)
@@ -520,12 +528,13 @@ function untilText() {                // 카운트다운 — 21:20 이 지났는
   if (LAST && LAST.date < expectedAsOf(t)) return {late: true, text: TEXT.late};
   return {late: false, text: hms(nextRelease(t) - t)};
 }
-function hoursText() {
+/* Next Log 칸의 '다음 기록까지' + LED 시계(C+ — 기다릴 때 큰 자리에 있던 카운트다운을 옮겼다). 늦어지면 그 자리에 한 줄만.
+   연 뒤 · 기다릴 때 · 지난 기록 보기에서 같은 칸이라 시계도 같다. 1초마다 이 칸만 다시 그린다(tick) */
+function untilHTML() {
   const u = untilText();
-  if (u.late) return TEXT.late;
-  const h = Math.max(1, Math.round((nextRelease(now()) - now()) / 3600e3));
-  return TEXT.hours(h);
+  return `<div class="until" id="until" aria-live="off">${u.late ? '' : `<span class="uh">${esc(TEXT.waitHead)}</span>`}${clockHTML(u)}</div>`;
 }
+function tick() { const el = $('#until'); if (el) el.outerHTML = untilHTML(); }
 /* 사진 두 장에 같이 — 흐림 · 밝기 · 확대(기본 1.1배 위에 곱한다) */
 function photoLook(blur, bright, scale) {
   ['#photo', '#face'].forEach(sel => {
@@ -534,10 +543,10 @@ function photoLook(blur, bright, scale) {
     p.style.transform = scale > 1.0001 ? `scale(${(CROP.k * scale).toFixed(4)})` : '';
   });
 }
-/* 카운트다운 — 탁상시계 LED(크림 70%, 쌍점만 1초마다 깜빡). 늦어지면 글 한 줄 */
+/* 카운트다운 — 탁상시계 LED(크림 60% · 높이 40, 쌍점만 1초마다 깜빡). 늦어지면 글 한 줄 */
 function clockHTML(u) {
   return u.late ? `<span class="count late" id="cd">${esc(u.text)}</span>`
-    : `<span class="count" id="cd" role="timer" aria-label="${esc(u.text)}">${ledHTML(u.text, 'rgba(243,238,231,.7)', {sign: false, cls: 'clock'})}</span>`;
+    : `<span class="count" id="cd" role="timer" aria-label="${esc(u.text)}">${ledHTML(u.text, 'rgba(243,238,231,.6)', {sign: false, cls: 'clock'})}</span>`;
 }
 function setState(state) {
   STATE = state;
@@ -550,23 +559,17 @@ function veilGuess() {
   const mine = guesses()[LAST.date] || null;
   $('#veilGuess').textContent = mine ? `내가 찍은 답 · ${mine === 'up' ? TEXT.pickUp : TEXT.pickDown}` : TEXT.veilNoGuess;
 }
+/* 기다릴 때(C+, 오너 10-19 밤) — 마지막 날(LAST)의 연 뒤 화면을 움직임 없이 그대로 둔다: 그날 얼굴(어둡게 하지 않는다) · 날씨 ·
+   켜진 LED · 금액 · 장부 · 맞힘 줄(연 때 이 기기가 남긴 판정, 안 찍었으면 '다음엔 미리 찍기'). 카운트다운은 Next Log 칸에 */
 function renderWait() {
   setState('wait');
-  $('#window').dataset.weather = LAST.weather;            // 기다릴 때 = 이미 연 날의 얼굴
+  $('#window').dataset.weather = LAST.weather;
   tint(LAST.weather);
-  setFace(faceOf(LAST.weather), 1);                      // 마지막으로 연 날의 얼굴, 조금 어둡게
-  photoLook(0, 0.82, 1);
+  setFace(faceOf(LAST.weather), 1);
+  photoLook(0, lightOf(LAST.weather), 1);                 // 연 뒤 끝 밝기와 같다 — 그날 빛(3판-b), 0.82 어둡게는 뺐다(C+)
   $('#fog').style.opacity = 0;
   skyMode(LAST.weather); skyOpacity(1); skyUpto(Infinity);
-  const target = addDays(LAST.date, 1), m = moneyOf(D, LAST.date);
-  const today = kstDate(now()), yday = LAST.date === today ? '오늘' : LAST.date === addDays(today, -1) ? '어제' : '지난 결과';
-  $('#state').innerHTML = `<span class="eyebrow">${esc(TEXT.waitHead)}</span>` + clockHTML(untilText()) +
-    pickButtons(target, TEXT.nextHead) +
-    `<span class="note">${esc(TEXT.pickNote)}</span>` +
-    `<p class="money last">${yday} ${esc(md(LAST.date))} · ${esc(WEATHER_WORD[LAST.weather] || '')} · ` +
-    `<b>${esc(pctOf(LAST.change_pct))}</b><br>${moneyLine(m, false)}</p>`;
-  clearInterval(timer);
-  if (!NOW0) timer = setInterval(() => { const el = $('#cd'); if (el) el.outerHTML = clockHTML(untilText()); }, 1000);
+  $('#state').innerHTML = openBody(pastJudge(LAST.date) || {result: null, streak: 0}, LAST, true);
 }
 function renderArrived() {
   setState('arrived');
@@ -587,29 +590,33 @@ function renderArrived() {
     (mine ? '' : `<div class="pre">${pickButtons(LAST.date, TEXT.preHead)}</div>`) +
     (streak ? `<span class="note">맞힌 날 ${streak}일 연속 — 오늘 맞히면 ${streak + 1}일</span>` : '');
 }
-function fixBox(asOf) {             // 그 밤에 나온 정정 — 맞힘 줄 아래 13px, 앞에 '정정' 크림색 굵게
-  const list = fixesOf(D).filter(f => f.as_of === asOf);
+function fixBox(asOf, key = 'as_of') {   // 그 밤에 나온 정정(지난 기록은 key = 'date' — 그날을 고친 정정) — 맞힘 줄 아래 13px, 앞에 '정정' 크림색 굵게
+  const list = fixesOf(D).filter(f => f[key] === asOf);
   if (!list.length) return '';
   return '<div class="fixes" id="fixLine">' + list.slice(0, 2).map(f =>
     `<p><b>${esc(TEXT.fixWord)}</b> · ${esc(fixText(f))} · ${esc(f.why)}</p>`).join('') +
     (list.length > 2 ? `<p>${esc(fixMore(list.length - 2))}</p>` : '') + '</div>';
 }
-/* 그날 장부(디자인 3판-c §1 7) — 도착엔 흐리게(aria 숨김), 연 뒤엔 1.5초에 걷힌다 */
-function dayBlocks(veiled) {
+/* 그날 장부(디자인 3판-c §1 7) — 도착엔 흐리게(aria 숨김), 연 뒤엔 1.5초에 걷힌다. row = 그날(지난 기록 보기) */
+function dayBlocks(veiled, row = LAST) {
   const a = veiled ? ' aria-hidden="true"' : '', b = veiled ? ' blur' : '';
-  const parts = veiled ? [LEDGER.closed, LEDGER.high, LEDGER.low].map(n => [n, '—', '—', '']) : ledgerParts(D, LAST);
+  const parts = veiled ? [LEDGER.closed, LEDGER.high, LEDGER.low].map(n => [n, '—', '—', '']) : ledgerParts(D, row);
   return `<div class="ledger${b}" id="ledger"${a}><span class="lh">${esc(TEXT.ledgerHead)}</span>${ledgerHtml(parts)}</div>`;
 }
-function openBody(j) {
-  const m = moneyOf(D, LAST.date), v = verdictOf(j);
-  return `<span class="eyebrow">${esc(dateLine(LAST))} · ${esc(WEATHER_WORD[LAST.weather] || '')}</span>` +
-    `<div class="numrow" id="bigNum" role="img" aria-label="${esc(pctOf(LAST.change_pct))}">` +
-    `<div class="glow" id="glow" style="background:${glowOf(LAST)}"></div><span id="ledBox">${ledHTML(LED_DARK, null)}</span></div>` +
-    `<span class="money" id="moneyLine">${moneyLine(m, true, true, todayCls(LAST))}</span>` +
-    `<span class="result ${v.cls}" id="hitLine"><i></i>${esc(v.text)}</span>` + fixBox(LAST.date) +
-    dayBlocks(false) +
-    `<div class="divide" id="nextBox"><div class="row"><b class="en">${esc(TEXT.nextEn)}</b><span>${esc(hoursText())}</span></div>` +
-    pickButtons(addDays(LAST.date, 1), TEXT.nextHead) + '</div>';
+/* 연 뒤 — still = 움직임 없이 끝 모습(LED 켜진 채 · 빛 켜짐): 기다릴 때(C+)와 지난 기록 보기(C).
+   row 가 지난날이면 그날 기록: 위에 '{날짜} 기록 · 오늘 기록으로' 줄, 금액은 '그날 · 하루', 맞힘 줄은 이 기기가 그날을 판정해 둔 것만,
+   정정은 그날을 고친 것. Next Log 칸은 늘 같은 칸이고 늘 '내일'(LAST 다음 날) 것이다 */
+function openBody(j, row = LAST, still = row !== LAST) {
+  const past = row !== LAST, m = moneyOf(D, row.date), v = j && verdictOf(j);
+  return (past ? pastBar(row) : '') + `<span class="eyebrow">${esc(dateLine(row))} · ${esc(WEATHER_WORD[row.weather] || '')}</span>` +
+    `<div class="numrow" id="bigNum" role="img" aria-label="${esc(pctOf(row.change_pct))}">` +
+    `<div class="glow${still ? ' on' : ''}" id="glow" style="background:${glowOf(row)}"></div>` +
+    `<span id="ledBox">${still ? ledHTML(ledStr(row.change_pct), ledColor(row)) : ledHTML(LED_DARK, null)}</span></div>` +
+    `<span class="money" id="moneyLine">${moneyLine(m, true, true, todayCls(row), past ? MONEY_WORDS.past : undefined)}</span>` +
+    (v ? `<span class="result ${v.cls}" id="hitLine"><i></i>${esc(v.text)}</span>` : '') + fixBox(row.date, past ? 'date' : 'as_of') +
+    dayBlocks(false, row) +
+    `<div class="divide" id="nextBox"><div class="row"><b class="en">${esc(TEXT.nextEn)}</b></div>` +
+    untilHTML() + pickButtons(addDays(LAST.date, 1), TEXT.nextHead) + `<span class="note">${esc(TEXT.pickNote)}</span></div>`;
 }
 /* 열 때 움직임 — t(ms) 한 점의 모습(디자인 3판 §1 · §2).
    사진: 흐림이 1.2초에 걷히고 1.06배 → 1배, 0.9초부터 0.6초 동안 무표정 위에 그날 얼굴이 겹쳐 나타난다.
@@ -624,7 +631,7 @@ function ledAt(t, live) {
   LED_PHASE = phase;
   const s = ledStr(LAST.change_pct);
   $('#ledBox').innerHTML = phase === 0 ? ledHTML(LED_DARK, null)
-    : phase === 1 ? ledHTML(s.replace(/[0-9OF-]/g, '8'), LED_EIGHT) : ledHTML(s, ledColor(LAST), {cls: live ? 'blink' : ''});
+    : phase === 1 ? ledHTML(s.replace(/[0-9oF-]/g, '8'), LED_EIGHT) : ledHTML(s, ledColor(LAST), {cls: live ? 'blink' : ''});
   $('#glow').classList.toggle('on', phase === 2);
 }
 function frameAt(t, live = false) {
@@ -644,10 +651,12 @@ function frameAt(t, live = false) {
   // 그날 장부 — 1.5초에 흐림이 걷힌다(3판-c §2)
   $('#ledger').style.filter = e2 >= 1 ? '' : `blur(${(14 * (1 - e2)).toFixed(2)}px)`;
 }
-function reveal(freezeAt) {
-  const j = judge(D, LAST.date);
-  store.set(KEYS.opened, LAST.date);
-  countVisit();
+/* again = 지난 기록에서 '오늘 기록으로' — 연 뒤 끝 모습을 다시 그리기만 한다(판정 · 연 날 셈은 처음 한 번뿐) */
+let OPEN_J = null, ANIM = 0;
+function reveal(freezeAt, again = false) {
+  const j = again ? OPEN_J : (OPEN_J = judge(D, LAST.date)), id = ++ANIM;
+  if (again) freezeAt = 1e9;
+  else { store.set(KEYS.opened, LAST.date); countVisit(); }
   setState('open');
   $('#window').dataset.weather = LAST.weather;
   tint(LAST.weather);
@@ -658,7 +667,8 @@ function reveal(freezeAt) {
   if (freezeAt != null) { frameAt(freezeAt); return; }        // 캡처 — 그 순간에 멈춘다
   if (reduced()) { frameAt(1e9); return; }
   const t0 = performance.now();
-  const step = ts => { const t = ts - t0; if (t < 2500) { frameAt(t, true); requestAnimationFrame(step); } else frameAt(1e9, true); };
+  const step = ts => { if (id !== ANIM) return;              // 그사이 지난 기록으로 갔다 — 오늘 값을 그 위에 다시 쓰지 않는다
+    const t = ts - t0; if (t < 2500) { frameAt(t, true); requestAnimationFrame(step); } else frameAt(1e9, true); };
   requestAnimationFrame(step);
 }
 
@@ -754,86 +764,105 @@ function renderConstel() {
   $('#starCap').innerHTML = !n ? '' : due ? `<span>${esc(TEXT.starDue(n))}</span><b class="flat">?</b>` : capText(rows, n - 1);
   // 60번째 별의 날 = 1일째 + 59일(1일째 = 판정 시작 봉을 지난 첫 하루 — summary.started 는 그 봉의 날이라 하루 앞이다)
   const day1 = rows.length ? rows[0].date : null;
-  $('#finale').textContent = TEXT.finale(n0, day1 ? `${md(addDays(day1, n0 - 1))} ` : '');
+  $('#finale').textContent = TEXT.finale(n0, day1 ? md(addDays(day1, n0 - 1)) : '');
   el.hidden = false;
 }
 function showStar(e) {
   const h = e.target.closest('[data-star]');
   if (h) $('#starCap').innerHTML = capText(D.scene.rows.slice(0, MOON.MAX), +h.getAttribute('data-star'));
 }
-/* 지난 밤들 — 칸마다 그날 얼굴을 동그랗게(40px · 배경 400% · 위치 52.5% 41%). 쉰 밤은 무표정을 어둡게.
-   도착 상태의 오늘 칸은 점선 고리와 '?' — 오늘 얼굴은 열어야 보인다 */
-const DUE_RING = '<svg class="due" width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="#d6cec4" stroke-opacity=".6" stroke-dasharray="3 3.5"></circle></svg>';
+/* 지난 밤들 — 필름 띠(디자인 지시 C++절, 시안 15판): 칸 상자 없이 밤마다 세로 사진(그날 얼굴, 콩 전신) + 날짜 `10.28` + 퍼센트.
+   쉰 밤은 사진을 어둡게. 도착 상태의 오늘 칸은 같은 크기의 점선 빈 틀과 '?' — 오늘 얼굴은 열어야 보인다.
+   칸이 통째로 단추다 — 지난 칸은 그날 기록, 오늘 칸(맨 끝)은 오늘로. 보이는 날(오늘 · 고른 날)의 사진에 크림 outline.
+   고친 날은 '정정' 을 작게 남긴다(정정 규약 — 고친 숫자는 숨기지 않는다) */
 const thumbOf = w => `<span class="thumb${w === 'closed' ? ' dim' : ''}" data-face="${faceOf(w)}" style="background-image:url(${FACE_SRC(faceOf(w))})" ` +
   `role="img" aria-label="${esc(FACE_WORD[faceOf(w)])}"></span>`;
+const dotDate = s => { const m = String(s || '').match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? `${+m[1]}.${m[2]}` : ''; };   // 10.28 · 11.01
 function renderNights() {
-  const el = $('#nightsSec'), rows = (D.scene && D.scene.rows) || [];
+  const el = $('#nightsSec'), rows = (D.scene && D.scene.rows) || [], shown = PAST ? PAST.date : LAST && LAST.date;
   if (!rows.length) { el.hidden = true; return; }
   $('#nights').innerHTML = rows.map((r, i) => {
     const last = i === rows.length - 1, hide = last && STATE === 'arrived';
-    return `<div class="night${last ? ' today' : ''}"><span>${esc(md(r.date))}</span>${hide ? DUE_RING : thumbOf(r.weather)}` +
-           `<b class="${hide ? 'flat' : tone(r.weather)}">${hide ? '?' : esc(pctOf(r.change_pct))}</b>` +
-           (hide ? '' : `<small class="act">${esc(actWord(r, tradesOf(D, r.date)))}</small>`) +
-           (!hide && fixOn(D, r.date) ? `<small class="fix">${esc(TEXT.fixWord)}</small>` : '') + '</div>';
+    const label = PAST_TEXT.of(r.date) + (hide ? '' : ` · ${pctOf(r.change_pct)}`);
+    return `<button class="night${last ? ' today' : ''}" type="button" data-day="${esc(r.date)}" aria-label="${esc(label)}"` +
+           `${r.date === shown ? ' aria-current="true"' : ''}>${hide ? '<span class="frame due" aria-hidden="true"></span>' : thumbOf(r.weather)}` +
+           `<span class="dt">${esc(dotDate(r.date))}</span><b class="${hide ? 'flat' : tone(r.weather)}">${hide ? '?' : esc(pctOf(r.change_pct))}</b>` +
+           (!hide && fixOn(D, r.date) ? `<small class="fix">${esc(TEXT.fixWord)}</small>` : '') + '</button>';
   }).join('');
   el.hidden = false;
-  const n = $('#nights'); n.scrollLeft = n.scrollWidth;
+  const n = $('#nights'), sel = PAST && n.querySelector('.night[aria-current]');
+  if (!sel) { n.scrollLeft = n.scrollWidth; return; }                    // 처음엔 맨 끝(오늘)이 보이게
+  n.scrollLeft += sel.getBoundingClientRect().left - n.getBoundingClientRect().left - (n.clientWidth - sel.offsetWidth) / 2;   // 고른 날을 가운데로
 }
-/* 시작부터 — 한 축(달러), 시작선 점선, 가장 낮은 점 황토(시작 아래로 간 적 있을 때만), 지금 점 연두 */
+/* 캡처만(#to=…) — 그 칸으로 내려가되 붙박이 머리 줄 높이만큼 덜 내려 제목이 머리 줄 밑에 숨지 않게 */
+const capScroll = el => setTimeout(() => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 64), 400);
+/* Orbit — 시작부터 한 축(달러). 크림 선(1.5px · 빛 번짐) 아래를 손익 쪽 색 14% → 투명으로 채우고, 1만 시작선은 옅은 점선,
+   가장 낮은 점 노을 주황(시작 아래로 간 적 있을 때만), 끝점은 크림 3px + 60 Nights 오늘 별처럼 퍼지는 고리(디자인 Orbit 다듬기).
+   판의 가로는 그릴 때 실제 폭으로 잰다 — 'none' 늘이기 대신이라 컴퓨터 폭에서도 점 · 고리가 둥글다(폰은 358 그대로) */
 function renderFlow() {
   const el = $('#flow'), s = D.summary;
   let rows = (D.equity_daily.rows || []).filter(r => r.usd != null);
   if (STATE === 'arrived' && LAST) rows = rows.filter(r => r.date < LAST.date);
   // 시즌 전(장면 값 없음)에는 그리지 않는다 — 판정 시작 봉의 날 한 줄만 있어도 '연습 시작 전'과 엇갈린다
   if (!LAST || !rows.length || s.start_usd == null) { el.hidden = true; return; }
+  el.hidden = false;
+  const svg = $('#chart');
   const vals = [s.start_usd, ...rows.map(r => r.usd)];
   let lo = Math.min(...vals), hi = Math.max(...vals);
   const pad = (hi - lo) * 0.18 || 20;
   lo -= pad; hi += pad;
-  const W = 358, H = 140, n = vals.length - 1;
+  const W = Math.round(svg.getBoundingClientRect().width) || 358, H = 140, n = vals.length - 1;
+  svg.setAttribute('viewBox', `0 0 ${W} 150`);
   const X = i => 6 + (W - 12) * i / n, Y = x => 8 + (H - 16) * (1 - (x - lo) / (hi - lo));
   const line = vals.map((x, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(x).toFixed(1)).join(' ');
   const min = Math.min(...vals), minI = vals.indexOf(min);
-  let g = '<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3eee7" stop-opacity=".16"></stop>' +
-          '<stop offset="1" stop-color="#f3eee7" stop-opacity="0"></stop></linearGradient></defs>';
-  g += `<path d="${line} L${X(n).toFixed(1)} ${H} L${X(0).toFixed(1)} ${H} Z" fill="url(#ga)"></path>`;
-  g += `<line x1="6" x2="${W - 6}" y1="${Y(s.start_usd).toFixed(1)}" y2="${Y(s.start_usd).toFixed(1)}" stroke="#8b8279" stroke-width="1" stroke-dasharray="2 5" vector-effect="non-scaling-stroke"></line>`;
-  g += `<path d="${line}" fill="none" stroke="#f3eee7" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></path>`;
+  const side = vals[n] >= s.start_usd ? LED_COLOR.up : LED_COLOR.down;           // 면 색 = 지금 손익 쪽
+  let g = `<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${side}" stop-opacity=".14"></stop>` +
+          `<stop offset="1" stop-color="${side}" stop-opacity="0"></stop></linearGradient></defs>`;
+  g += `<path class="area" d="${line} L${X(n).toFixed(1)} ${H} L${X(0).toFixed(1)} ${H} Z" fill="url(#ga)"></path>`;
+  g += `<line class="start" x1="6" x2="${W - 6}" y1="${Y(s.start_usd).toFixed(1)}" y2="${Y(s.start_usd).toFixed(1)}" stroke="#f3eee7" stroke-opacity=".18" stroke-width="1" stroke-dasharray="2 5"></line>`;
+  g += `<path class="line" d="${line}" fill="none" stroke="#f3eee7" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path>`;
   if (min < s.start_usd) g += `<circle class="low" cx="${X(minI).toFixed(1)}" cy="${Y(min).toFixed(1)}" r="3.6" fill="${LED_COLOR.down}"></circle>`;
-  g += `<circle class="now" cx="${X(n).toFixed(1)}" cy="${Y(vals[n]).toFixed(1)}" r="4.4" fill="${LED_COLOR.up}"></circle>`;
-  const svg = $('#chart');
+  const ex = X(n).toFixed(1), ey = Y(vals[n]).toFixed(1);
+  g += `<circle class="ring" cx="${ex}" cy="${ey}" r="6" fill="none" stroke="#f3eee7" stroke-width=".8"></circle>` +
+       `<circle class="now" cx="${ex}" cy="${ey}" r="3" fill="#f3eee7"></circle>`;
   svg.innerHTML = g;
   svg.setAttribute('aria-label', `시작 뒤 ${rows.length}일 동안의 가짜 돈 흐름`);
   $('#chartMoney').textContent = `${short(s.start_usd)} → ${short(vals[n])}달러`;
   $('#chartLow').textContent = min < s.start_usd ? `가장 낮을 때 ${short(min)}달러` : TEXT.worstNone;
   $('#chartFrom').textContent = md(rows[0].date);
   $('#chartTo').textContent = md(rows[rows.length - 1].date);
-  el.hidden = false;
+  if (HASH.get('to') === 'flow') capScroll(el);                                   // 캡처만 — Orbit 칸으로 내려간다
 }
+/* Last 7 Nights — 늘 오늘 포함 최근 7밤(디자인 7밤 지시 · 오너 "한 주 총합이어야"). 두 쪽 % 는 밤 배치가 같은 창으로 센
+   weeks.json 의 last7 그대로(화면은 따로 세지 않는다). 승패는 끝난 달력 주(월~일) rows 로 지금처럼 센다 */
+const mdDot = s => { const m = String(s || '').match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? `${+m[1]}.${+m[2]}` : ''; };
+const rangeText = L => `${mdDot(L.from)} ~ ${mdDot(L.to)} · ${L.nights}${TEXT.nightsWord}`;
 function renderDuel() {
-  const el = $('#duel'), wk = (D.weeks && D.weeks.rows) || [];
-  if (!wk.length) { el.hidden = true; return; }
-  // 열기 전(도착)엔 이번 주 % · 막대 · 판정 글을 비운다 — 이번 주 값엔 그날 결과가 들어 있다. 끝난 주도 어제까지 끝난 것만 센다
+  const el = $('#duel'), wk = (D.weeks && D.weeks.rows) || [], L = D.weeks && D.weeks.last7;
+  if (!L) { el.hidden = true; return; }
+  // 열기 전(도착)엔 7밤 % · 막대 · 판정 글을 비운다 — 7밤엔 그날 결과가 들어 있다. 끝난 주도 어제까지 끝난 것만 센다
   // (일요일엔 오늘 끝나는 주가 그날 결과로 갈린다) — 감사 · 기획 2026-10-19 '도착에 그날 수가 한 글자도 없다'
   const veil = STATE === 'arrived', asOf = D.summary.as_of, upTo = veil ? addDays(asOf, -1) : asOf;
   const done = r => addDays(r.week_start, 6) <= upTo;
-  const w = wk[wk.length - 1], fin = wk.filter(r => done(r) && r.kong_pct != null && r.btc_pct != null);
+  const fin = wk.filter(r => done(r) && r.kong_pct != null && r.btc_pct != null);
   const wins = fin.filter(r => r.kong_pct > r.btc_pct).length, loss = fin.filter(r => r.kong_pct < r.btc_pct).length;
   const bar = p => p == null || veil ? '' : `<i class="${p >= 0 ? 'up' : 'down'}" style="${p >= 0 ? 'left' : 'right'}:50%;width:${Math.min(48, Math.abs(p) * 25).toFixed(1)}%"></i>`;
   const cls = p => p == null || veil ? 'flat' : p > FLAT ? 'up' : p < -FLAT ? 'down' : 'flat';
-  const pctV = p => veil ? '—' : pct(p);
-  let say;
-  if (w.btc_pct == null || w.kong_pct == null) say = TEXT.btcNone;
-  else if (Math.abs(w.kong_pct - w.btc_pct) < 0.05) say = done(w) ? TEXT.duelDraw : TEXT.duelNear;
-  else if (w.kong_pct > w.btc_pct) say = done(w) ? TEXT.duelWin(TEXT.kong) : TEXT.duelLead(TEXT.kong);
-  else say = done(w) ? TEXT.duelWin(TEXT.btcName) : TEXT.duelLead(TEXT.btcName);
+  const pctV = p => veil || p == null ? '—' : pct(p);
+  const m = L.moonlog_pct, b = L.btc_pct;
+  // 비트코인 값이 없을 때만 '시세 못 받음'(문로그 값이 빈 것을 비트코인 탓으로 말하지 않게)
+  let say = b == null ? TEXT.btcNone : m == null ? '' : Math.abs(m - b) < 0.05 ? TEXT.duelNear(L.nights)
+    : TEXT.duelLead(m > b ? TEXT.kong : TEXT.btcName, L.nights);
   if (veil) say = '';
-  el.innerHTML = `<div class="row"><h2>${esc(TEXT.weeksTitle)}</h2><span>${fin.length ? `지금까지 ${wins}승 ${loss}패` : ''}</span></div>` +
+  el.innerHTML = `<div class="row"><h2>${esc(TEXT.weeksTitle)}</h2><span>${fin.length ? `${esc(TEXT.finWeeks)} ${wins}승 ${loss}패` : ''}</span></div>` +
+    `<p class="range" id="duelRange">${esc(rangeText(L))}</p>` +
     `<div class="duel-body${veil ? ' veiled' : ''}"${veil ? ' aria-hidden="true"' : ''}>` +
-    `<div class="duel-grid"><span>${esc(TEXT.kong)}</span><b class="${cls(w.kong_pct)}">${esc(pctV(w.kong_pct))}</b><div class="track">${bar(w.kong_pct)}</div>` +
-    `<span>${esc(TEXT.btcName)}</span><b class="${cls(w.btc_pct)}">${esc(pctV(w.btc_pct))}</b><div class="track">${bar(w.btc_pct)}</div></div>` +
+    `<div class="duel-grid"><span>${esc(TEXT.kong)}</span><b class="${cls(m)}">${esc(pctV(m))}</b><div class="track">${bar(m)}</div>` +
+    `<span>${esc(TEXT.btcName)}</span><b class="${cls(b)}">${esc(pctV(b))}</b><div class="track">${bar(b)}</div></div>` +
     `<p class="sub">${esc(say)}</p></div>`;
   el.hidden = false;
+  if (HASH.get('to') === 'duel') capScroll(el);                                   // 캡처만 — 맞대결 칸으로 내려간다
 }
 function fold(title, inner, key) {
   return `<details${key ? ` data-fold="${key}"` : ''}><summary>${esc(title)}</summary><div>${inner}</div></details>`;
@@ -852,7 +881,7 @@ function renderFolds() {
   const fixP = fixesOf(D).slice().reverse().map(f =>
     `<p class="fix">${esc(`${TEXT.fixWord}: ${fixText(f)} · ${f.why}${fixUsd(f)}`)}</p>`).join('');
   if (fixP) html += fold(TEXT.fixTitle(fixesOf(D).length), fixP, 'fix');
-  // 실험 기록 — 결과는 정해진 다섯 낱말(public_export.LAB_RESULT)
+  // 실험 기록 — 결과는 정해진 낱말(public_export.LAB_RESULT — 다섯 + 지켜보는 중)
   const lb = D.lab.rows || [];
   if (lb.length) html += fold(TEXT.labTitle(lb.length), `<p class="d">${esc(TEXT.labLead)}</p>` +
     lb.map(r => `<p>${esc(r.label + (r.title ? ' — ' + r.title : ''))} · ${esc(r.result)}</p>`).join(''), 'lab');
@@ -869,6 +898,58 @@ function renderFoot(site) {
   $('#foot').innerHTML = `<b>${esc(TEXT.notice)}</b>` + lines.map(x => `<span>${esc(x)}</span>`).join('');
 }
 function renderLower() { renderConstel(); renderNights(); renderFlow(); renderDuel(); }
+
+/* ── 지난 기록 보기 — 지난 칸을 누르면 첫 화면(얼굴 · 창 날씨 · 바탕 색조 · LED · 금액 · 장부 · 맞힘 줄)이 그날 값으로
+   (디자인 지시 영문제목 · 초승달 · 지난기록 C절). 열기 움직임 없이 바로, LED 는 켜진 채. 새 공개 값은 없다 — 이미 공개된
+   scene · equity_daily · trades_daily 의 그날 줄과 그날을 고친 정정만 읽는다. 기다릴 때 · 도착 · 연 뒤 어디서든 열고,
+   '오늘 기록으로' 면 그 상태로 돌아간다(도착이면 다시 '열기'). 아래 칸들(별 · 지난 밤들 · 흐름 선 · 맞대결)은 그 상태 그대로 ── */
+const PAST_TEXT = {of: d => `${md(d)} ${dow(d)}요일 기록`, back: '오늘 기록으로'};
+let PAST = null;                      // 보고 있는 지난날의 scene 줄(없으면 오늘)
+const pastBar = row => `<div class="pastbar" id="pastBar"><span>${esc(PAST_TEXT.of(row.date))}</span>` +
+  `<button type="button" id="pastBack">${esc(PAST_TEXT.back)}</button></div>`;
+/* 그날 줄 — 장면 줄에 있는 지난날만. 오늘 · 앞날 · 없는 날 · 틀린 꼴(장면 줄에 없다)은 null(= 오늘로) */
+function pastRow(d) {
+  if (!LAST || d >= LAST.date) return null;
+  return D.scene.rows.find(r => r.date === d) || null;
+}
+/* 그날 맞힘 — 이 기기가 그날을 판정해 둔 것(judge 가 남긴다). 없으면 맞힘 줄을 안 그린다 */
+function pastJudge(date) {
+  const v = verdicts()[date];
+  return Array.isArray(v) && ['hit', 'miss', 'draw', 'rest'].includes(v[0]) ? {result: {kind: v[0]}, streak: +v[1] || 0} : null;
+}
+function showPast(row) {
+  PAST = row;
+  ANIM++;                             // 돌던 열기 움직임이 있으면 멈춘다
+  $('#first').dataset.past = row.date;
+  $('#topRight').textContent = TEXT.nextAt;
+  $('#veil').hidden = true;
+  $('#window').dataset.weather = row.weather;
+  tint(row.weather);
+  setFace(faceOf(row.weather), 1);
+  photoLook(0, lightOf(row.weather), 1);                 // 그날 밤 연 뒤 끝 밝기 그대로(3판-b)
+  $('#fog').style.opacity = 0;
+  skyMode(row.weather); skyOpacity(1); skyUpto(Infinity);
+  $('#state').innerHTML = openBody(pastJudge(row.date), row);
+  renderNights();
+}
+function toToday() {
+  if (!PAST) return;
+  PAST = null;
+  delete $('#first').dataset.past;
+  if (STATE === 'open') reveal(null, true);
+  else if (STATE === 'wait') renderWait();
+  else { $('#window').dataset.weather = 'none'; renderArrived(); }      // 도착 — 날씨를 비우고 다시 '열기'
+  renderNights();
+}
+/* 사람이 누름 — 지난 칸은 그날로, 오늘 칸은 오늘로. 주소를 #d= 로 바꿔(공유용) 첫 화면으로 올라간다 */
+function pickDay(d) {
+  const row = pastRow(d);
+  if (row) showPast(row); else toToday();
+  try { history.replaceState(null, '', row ? `#d=${row.date}` : location.pathname + location.search); } catch (e) {}
+  window.scrollTo({top: 0, behavior: reduced() ? 'auto' : 'smooth'});
+  const back = $('#pastBack');
+  if (back) back.focus({preventScroll: true});
+}
 
 function render(data) {
   D = data;
@@ -888,11 +969,21 @@ function render(data) {
     return;
   }
   const opened = store.get(KEYS.opened);
+  if (!NOW0) timer = setInterval(tick, 1000);         // Next Log 칸의 시계(있을 때만 다시 그린다)
   if (HASH.has('at')) { renderArrived(); reveal(Number(HASH.get('at')) || 0); return; }
-  if (HASH.has('open')) { renderArrived(); reveal(1e9); return; }
-  if (opened && opened >= LAST.date) renderWait(); else renderArrived();
-  renderLower();
-  if (HASH.has('click') && !$('#veil').hidden) $('#openBtn').click();     // 캡처 — 사람이 누른 것과 같다
+  if (HASH.has('open')) { renderArrived(); reveal(1e9); }
+  else {
+    if (opened && opened >= LAST.date) renderWait(); else renderArrived();
+    renderLower();
+    if (HASH.has('click') && !$('#veil').hidden) $('#openBtn').click();   // 캡처 — 사람이 누른 것과 같다
+  }
+  // 주소 #d=YYYY-MM-DD — 그날 기록을 바로 연다(공유 · 쇼츠 프로필 링크). 오늘 · 없는 날 · 틀린 꼴이면 오늘 그대로
+  const p = pastRow(HASH.get('d'));
+  if (p) showPast(p);
+  // 캡처 · 시험만 — #tap=날짜: 그 칸을 누른다 · #back: 이어서 '오늘 기록으로' 를 누른다(사람이 누른 것과 같다)
+  const tap = [...document.querySelectorAll('#nights .night')].find(b => b.dataset.day === HASH.get('tap'));
+  if (tap) tap.click();
+  if (HASH.has('back') && $('#pastBack')) $('#pastBack').click();
 }
 
 async function load() {
@@ -919,6 +1010,15 @@ document.addEventListener('click', ev => {
   setGuess(box.dataset.target, b.dataset.pick);
   box.querySelectorAll('.pick').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
   if (STATE === 'arrived') veilGuess();
+});
+document.addEventListener('click', ev => {             // 지난 칸 · '오늘 기록으로'
+  const c = ev.target.closest('#nights .night');
+  if (c) { pickDay(c.dataset.day); return; }
+  if (ev.target.closest('#pastBack')) pickDay(null);
+});
+window.addEventListener('hashchange', () => {        // 주소 꼬리를 손으로 바꿨을 때 — 그날로, 아니면 오늘로
+  const row = pastRow(new URLSearchParams(location.hash.slice(1)).get('d'));
+  if (row) showPast(row); else toToday();
 });
 $('#constel').addEventListener('click', showStar);
 $('#constel').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute('data-star')) { e.preventDefault(); showStar(e); } });

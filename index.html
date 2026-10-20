@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Moonlog 문로그 — 밤마다 업데이트되는 가짜 돈 투자 기록</title>
-<meta name="description" content="Moonlog 문로그 — 밤마다 업데이트되는 가짜 돈 투자 기록. 매일 밤 9시 20분쯤 그날 기록이 도착한다. 실제 투자 아님 · 종목 추천 없음.">
+<title>Moonlog 문로그 — 밤마다 업데이트되는 모의 투자 기록</title>
+<meta name="description" content="Moonlog 문로그 — 밤마다 업데이트되는 모의 투자 기록. 매일 밤 9시 20분쯤 그날 기록이 도착한다. 실제 투자 아님 · 종목 추천 없음.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Instrument+Serif&display=swap">
@@ -38,6 +38,7 @@
       <div class="row"><h2>60 Nights</h2><span id="starCount"></span></div>
       <div class="moon"><svg id="constel" viewBox="0 0 358 236" role="img"></svg></div><!-- 상자 없이 밤하늘 위에 바로(초승달 지시 B) -->
       <div class="cap" id="starCap" aria-live="polite"></div>
+      <p class="prepnote" id="prepNote" hidden></p>
       <div class="skykey"><i class="k1"></i>번 밤<i class="k2"></i>그대로<i class="k3"></i>잃은 밤<i class="k4"></i>쉰 밤</div>
       <p class="sub" id="finale"></p>
     </section>
@@ -105,7 +106,8 @@ const lightOf = w => LIGHT[w] || 1;
    글은 데이터 우선 고정 문구뿐 — 느낌표 · 말 걸기 · 꾸민 말 없이, 데이터에 있는 것만(오너 글규칙 · 디자인 글규칙 데이터우선) */
 const TEXT = {
   failed: '자료를 못 읽음 · 잠시 뒤 다시 열기',
-  prestart: '가짜 돈 연습 시작 전',
+  // 공개 낱말은 '모의'(오너 · 디자인 모의표현 지시 · 기획 승인 2026-10-20) — 머리 줄은 '최종점검'
+  prestart: '모의 테스트 시작 전', topDay: n => `최종점검 · ${n}일째`, topPre: '최종점검 시작 전',
   nextAt: '다음 기록 밤 9시 20분',
   worstNone: '시작 아래로 내려간 적 없음',
   waitHead: '다음 기록까지',
@@ -127,12 +129,14 @@ const TEXT = {
   howTitle: 'How it works',
   ledgerHead: 'LOG · 어젯밤 9시보다',  // 높았을 때 · 낮았을 때가 무엇과 견준 값인지(디자인 대조 2026-10-19 · 영문 제목 A)
   dictTitle: n => `Glossary · ${n}`, dictAlt: '흔히 부르는 말',
-  ruleTag: '규칙 5판(2026년 10월 14일) 기준 — 규칙이 바뀌면 이 줄도 바뀜',
-  how: 'AI가 4시간마다 코인들이 오를지 내릴지 점치고, 가짜 돈으로 오를 쪽이나 내릴 쪽에 들어간다. 들어간 자리는 8시간 뒤에 정리한다. ' +
+  // 판의 기준 날 = 판정 시작 봉의 날(공개 자료 summary.started — 사양 상수에서 온다. 다시 시작 뒤엔 새 시작 봉의 날, 준비 기간
+  // 마지막 밤엔 준비 기간 시작 날). 손으로 적은 날짜는 시작 봉이 바뀌는 날 한쪽만 고쳐진다
+  ruleTag: iso => `규칙 5판${iso ? `(${iso.slice(0, 4)}년 ${md(iso)})` : ''} 기준 — 규칙이 바뀌면 이 줄도 바뀜`,
+  how: 'AI가 4시간마다 코인들이 오를지 내릴지 점치고, 모의 자금으로 오를 쪽이나 내릴 쪽에 들어간다. 들어간 자리는 8시간 뒤에 정리한다. ' +
        '어떤 코인인지는 보여 주지 않는다 — 따라 사지 말라는 뜻.',
   labTitle: n => `Lab · ${n}`, labLead: '지난 자료로 해 본 시험. 안 된 것도 그대로 적는다.',
   fixTitle: n => `Corrections · ${n}`,
-  notice: '가짜 돈 연습 · 실제 투자 아님 · 종목 추천 없음 · 따라 사지 말 것',
+  notice: '모의 투자 · 실제 투자 아님 · 종목 추천 없음 · 따라 사지 말 것',
   numbersLate: '숫자는 그날 밤 9시에 하루가 끝난 뒤 모은 값만. 고친 숫자는 숨기지 않고 \'정정\'으로 표시.',
   fixWord: '정정',
   counter: '방문 수만 셈(쿠키 없음)',
@@ -140,13 +144,22 @@ const TEXT = {
   // 최근 n밤 판정 한 줄(디자인 7밤 지시 — 데이터 우선 꼴). 차이 0.05%p 안은 비슷함. 밤 수는 범위 줄과 같은 last7.nights
   // (시즌이 7밤보다 짧으면 '최근 5밤은 …' — 기획 2026-10-20)
   duelNear: n => `최근 ${n}밤은 비슷함.`, duelLead: (who, n) => `최근 ${n}밤은 ${who} 앞섬.`,
+  // 60밤 다시 시작(오너 결정 2026-10-20 · 디자인 지시 다시시작) — 준비 기간은 시즌 수에 안 들어간다. 데이터 우선 꼴, 'API' 같은 말 없이
+  prepWord: '준비 기간', prepTop: (n, last) => `준비 기간 ${n}일째${last ? ' · 내일부터 1일째' : ''}`,
+  prepLastBar: d1 => `준비 기간 마지막 밤 · ${d1} 밤부터 60밤을 새로 센다`,
+  restartBar: (d1, a, b) => `다시 시작 · ${d1} 밤부터 60밤을 새로 센다 · ${a}~${b}은 준비 기간`,
+  // 캡션 아래 한 줄은 수 없이(디자인 대조 ① — 띠의 준비 무리 칸 수와 어긋나지 않게. 기간은 알림 줄 날짜 범위가 말한다)
+  prepGo: '준비 기간 보기', prepNote: '준비 기간 기록은 Past Logs 에', firstStar: d1 => `${d1} 밤에 첫 별`,
+  prepTag: (a, b) => `준비 기간 · ${a}–${b}`, prepDay: n => `준비 기간 ${n}일째`,
+  prepWhy: (d1, a, b) => `${d1} 밤부터 모형이 쓰는 자료를 공개 자료로 바꿔 60밤을 새로 센다. ${a}~${b}의 기록은 준비 기간으로 남긴다. ` +
+                         '준비 기간 값은 바꾸지 않는다.',
 };
 /* 쉬운 말 사전 — 디자인 원고(쇼츠원고_쉬운말사전_초안 26편, 기획 확인 10-15)를 3판 말투로(디자인 2026-10-19): 표제는 명사 ·
    뜻은 '~다'(내용은 그대로) · 한마디는 내림 — 11 · 15번은 기획이 손본 사실 문장이라 뜻 뒤에 '~다' 로 붙임.
    `alt`(흔히 부르는 말)만 바깥 말을 쓴다 — words.md 검사의 예외 칸, 작게. `rule` 은 규칙 숫자를 말하는 줄(흐린 꼬리표) —
    숫자는 시험이 사양(live.futures_paper.spec)과 맞춘다. 표제 '60 Nights' 는 소제목과 같은 낱말이다(영문 제목 지시 A) */
 const DICT = [
-  {w: '가짜 돈 연습', d: '진짜 돈 대신 장부 속 숫자로 사고팔아 보는 것이다.', alt: '페이퍼 트레이딩'},
+  {w: '모의 테스트', d: '진짜 돈 대신 장부 속 숫자로 사고팔아 보는 것이다.', alt: '페이퍼 트레이딩'},
   {w: '가장 많이 빠졌을 때', d: '제일 높았던 때에서 제일 낮았던 때까지 빠진 만큼이다.', alt: 'MDD · 최대 낙폭'},
   {w: '시작부터', d: '첫날 1만 달러와 견줘서 지금 얼마나 늘었는지 줄었는지를 나타낸다.', alt: '누적 수익률'},
   {w: '오를 쪽 · 내릴 쪽', d: '값이 오르면 버는 자리와, 값이 내리면 버는 자리다.', alt: '롱 · 숏'},
@@ -157,7 +170,7 @@ const DICT = [
   {w: '바로 사고판 주문', d: '지금 있는 값에 바로 사고파는 주문이다. 빠르지만 조금 비싸다.', alt: '시장가 · 테이커'},
   {w: '선물 이자', d: '선물을 들고 있으면 8시간마다 오가는 작은 돈이다. 받을 때도 낼 때도 있다.', alt: '펀딩비'},
   {w: '몇 배로 걸기', d: '가진 돈보다 크게 거는 것이다. 크게 벌 수도, 크게 잃을 수도 있다. ' +
-     '가짜 돈 연습의 규칙상 가진 돈의 1.5배까지만 건다. 빌린 돈이 아니라, 거는 비율의 상한이다.', alt: '레버리지', rule: true},
+     '모의 테스트의 규칙상 가진 돈의 1.5배까지만 건다. 빌린 돈이 아니라, 거는 비율의 상한이다.', alt: '레버리지', rule: true},
   {w: '미리 정한 규칙', d: '시험하기 전에 "이렇게 하고, 이러면 기준을 넘은 것"을 먼저 적어 두는 것이다.', alt: '사전등록'},
   {w: '지난 자료로 해 본 시험', d: '이 규칙이 그때 있었으면 어땠을지 옛 자료로 돌려 보는 것이다.', alt: '백테스트'},
   {w: '안 본 구간', d: '규칙을 만들 때 일부러 안 본 기간이다. 거기서도 되면 조금 더 믿는다.', alt: '홀드아웃 · 아웃오브샘플'},
@@ -423,7 +436,15 @@ function skyUpto(ms) { SKIES.forEach(s => s.upto(ms)); }
 /* 그날 한 일 — scene.json 의 act(없으면 옛 자료라 pose 로 짐작) · 그날 거래 줄.
    한 일: done 결과 남(정리 > 0) · wait 들어가기만(정리 0 · 들어감 > 0) · none 안 함 · rest 쉼(자료 없음) */
 const actOf = row => !row || row.change_pct == null ? 'rest' : row.act || (row.pose === 'doze' ? 'none' : 'done');
-const tradesOf = (D, date) => ((D && D.trades_daily && D.trades_daily.rows) || []).find(r => r.date === date) || {};
+const tradesOf = (D, date, prep = false) => rowsOf(D, 'trades_daily', prep).find(r => r.date === date) || {};
+/* 60밤 다시 시작 — 준비 기간 줄(공개 자료의 prep 목록 · phase 'prep')은 시즌 수 밖이다. 그날 줄은 그날이 준비 기간이면 prep 에서,
+   아니면 rows 에서 찾는다 — 준비 기간 끝 날과 시즌 기준 날(판정 시작 봉의 날)이 같은 날짜라 섞으면 안 된다.
+   PREP = {from, to, nights, last, day1} · PREP_MODE = 시즌 줄이 아직 없는 밤(보이는 판이 준비 기간). last = 다음 밤이 1일째 —
+   배포가 밀린 밤은 false 라 1일째 날짜를 모른다('내일부터' · 알림 줄 · 첫 별 날 · 까닭 단락을 안 쓴다) */
+const isPrep = row => !!row && row.phase === 'prep';
+const rowsOf = (D, name, prep) => (D && D[name] && (prep ? D[name].prep : D[name].rows)) || [];
+let PREP = null, PREP_MODE = false;
+const prepDay = d => PREP ? Math.round((Date.parse(d + 'T00:00:00Z') - Date.parse(PREP.from + 'T00:00:00Z')) / 864e5) + 1 : 0;
 /* 지난 밤들 · 콩자리 한 줄에 작게 — "4개 들어감" */
 function actWord(row, t) {
   const act = actOf(row);
@@ -432,8 +453,8 @@ function actWord(row, t) {
   if (act === 'none') return '거래 없음';
   return '';
 }
-function moneyOf(D, date) {          // {start, now, today} — 장부의 하루 끝 값(정수 달러)
-  const rows = D.equity_daily.rows || [];
+function moneyOf(D, date, prep = false) {   // {start, now, today} — 장부의 하루 끝 값(정수 달러). prep = 준비 기간 날
+  const rows = rowsOf(D, 'equity_daily', prep);
   const i = rows.findIndex(r => r.date === date);
   const start = D.summary.start_usd;
   if (i < 0 || start == null) return null;
@@ -446,7 +467,7 @@ const MONEY_WORDS = {today: ['지금', '오늘'], past: ['그날', '하루']};
 function moneyLine(m, withToday, bold = true, cls = '', w = MONEY_WORDS.today) {
   if (!m) return '';
   const B = (x, c = '') => bold ? `<b${c ? ` class="${c}"` : ''}>${x}</b>` : x;
-  return `가짜 돈 ${esc(usdWord(m.start))}로 시작 → ${w[0]} ${B(esc(usdWord(m.now)))}` +
+  return `${esc(usdWord(m.start))}로 시작한 모의 테스트 → ${w[0]} ${B(esc(usdWord(m.now)))}` +
          (withToday ? `<span class="m-sep"> · </span><span class="m-today">${w[1]} ${B(esc(usdSigned(m.today)), cls)}</span>` : '');
 }
 const todayCls = row => row.change_pct == null || tone(row.weather) === 'flat' ? '' : tone(row.weather);
@@ -457,8 +478,8 @@ const hourWord = h => h === 0 ? '밤 12시' : `${h < 6 ? '새벽' : h < 12 ? '�
 const LEDGER = {closed: '정리', won: '이긴 것', lost: '진 것', high: '가장 높았을 때', low: '가장 낮았을 때', entered: n => `들어감 ${n}건 · 8시간 뒤 정리`, none: '들어감 0건', rest: '자료 못 받음'};
 const usdSigned2 = n => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(Math.round(n)).toLocaleString('en-US') + '달러';
 function ledgerParts(D, row) {
-  const t = ((D.trades_daily && D.trades_daily.rows) || []).find(r => r.date === row.date) || {opened: 0, closed: 0, won: 0};
-  const e = ((D.equity_daily && D.equity_daily.rows) || []).find(r => r.date === row.date) || {};
+  const t = rowsOf(D, 'trades_daily', isPrep(row)).find(r => r.date === row.date) || {opened: 0, closed: 0, won: 0};
+  const e = rowsOf(D, 'equity_daily', isPrep(row)).find(r => r.date === row.date) || {};
   const act = actOf(row), sign = n => n > 0 ? 'up' : n < 0 ? 'down' : '';
   const aux = act === 'wait' ? LEDGER.entered(t.opened) : act === 'none' ? LEDGER.none
     : act === 'rest' ? '' : `${LEDGER.won} ${t.won} · ${LEDGER.lost} ${t.closed - t.won}`;
@@ -474,11 +495,13 @@ function ledgerParts(D, row) {
 const ledgerHtml = parts => parts.map(([n, v, a, c]) =>
   `<span class="ln">${esc(n)}</span><b${c ? ` class="${c}"` : ''}>${esc(v)}</b><em>${esc(a)}</em>`).join('');
 const total = () => (D && D.summary && D.summary.days_total) || SEASON_DAYS;
-const dateLine = row => `${md(row.date)} ${dow(row.date)}요일 · ${total()}일 중 ${row.day}일째`;
+const dateLine = row => `${md(row.date)} ${dow(row.date)}요일 · ` +
+  (isPrep(row) ? TEXT.prepDay(prepDay(row.date)) : `${total()}일 중 ${row.day}일째`);
 
 /* ── 맞힘 — 찍은 날의 change_pct 부호. 0.10 안은 무승부, 쉰 날은 없던 걸로(둘 다 연속 유지). 판정한 답은 지운다 ── */
 function judge(D, upTo) {
-  const g = guesses(), byDate = Object.fromEntries((D.scene.rows || []).map(r => [r.date, r.change_pct])), seen = verdicts();
+  const g = guesses(), seen = verdicts();
+  const byDate = Object.fromEntries([...(D.scene.prep || []), ...(D.scene.rows || [])].map(r => [r.date, r.change_pct]));
   let streak = gStreak(), last = null;
   for (const date of Object.keys(g).sort()) {
     if (date > upTo) continue;
@@ -551,7 +574,8 @@ function clockHTML(u) {
 function setState(state) {
   STATE = state;
   $('#first').dataset.state = state;
-  $('#topRight').textContent = state === 'wait' || !LAST ? TEXT.nextAt : `가짜 돈 연습 · ${LAST.day}일째`;
+  $('#topRight').textContent = PREP_MODE ? TEXT.prepTop(prepDay(LAST.date), PREP.last)   // 준비 기간 마지막 밤(다시시작 0-1절)
+    : !LAST ? TEXT.topPre : TEXT.topDay(LAST.day);     // 머리 줄 — 연 뒤 · 기다릴 때 · 도착 같은 꼴
   $('#veil').hidden = state !== 'arrived';
   $('#veil').style.opacity = '';
 }
@@ -578,14 +602,14 @@ function renderArrived() {
   photoLook(14, 0.5, 1.06);
   $('#fog').style.opacity = 1;
   skyMode('fog'); skyOpacity(1); skyUpto(Infinity);
-  const mine = guesses()[LAST.date] || null, m = moneyOf(D, LAST.date), streak = gStreak();
+  const mine = guesses()[LAST.date] || null, m = moneyOf(D, LAST.date, isPrep(LAST)), streak = gStreak();
   $('#veilText').textContent = TEXT.veil(md(LAST.date));
   veilGuess();
-  $('#state').innerHTML = `<span class="eyebrow">${esc(dateLine(LAST))}</span>` +
+  $('#state').innerHTML = restartBar() + `<span class="eyebrow">${esc(dateLine(LAST))}</span>` +
     `<div class="numrow" aria-hidden="true">${ledHTML(LED_DARK, null)}</div>` +       // 꺼진 판은 늘 +88.8% 꼴
     // 열기 전엔 그날 수가 한 글자도 없다(감사 · 기획, 10월 19일) — 금액 줄은 전날 끝 값('시작부터 지금까지' 와 같은 기준),
     // 장부는 칸 이름만 있는 빈 영수증(칸 수도 늘 같게 — 칸 수가 그날 한 일을 말하지 않게, 3판-c §2 · 디자인 대조)
-    `<span class="money blur" aria-hidden="true">${moneyLine(m && {start: m.start, now: m.prevNow}, false, false)}</span>` +
+    `<span class="money blur" aria-hidden="true">${moneyLine(m && {start: m.start, now: m.prevNow}, false, true)}</span>` +
     dayBlocks(true) +
     (mine ? '' : `<div class="pre">${pickButtons(LAST.date, TEXT.preHead)}</div>`) +
     (streak ? `<span class="note">맞힌 날 ${streak}일 연속 — 오늘 맞히면 ${streak + 1}일</span>` : '');
@@ -606,9 +630,17 @@ function dayBlocks(veiled, row = LAST) {
 /* 연 뒤 — still = 움직임 없이 끝 모습(LED 켜진 채 · 빛 켜짐): 기다릴 때(C+)와 지난 기록 보기(C).
    row 가 지난날이면 그날 기록: 위에 '{날짜} 기록 · 오늘 기록으로' 줄, 금액은 '그날 · 하루', 맞힘 줄은 이 기기가 그날을 판정해 둔 것만,
    정정은 그날을 고친 것. Next Log 칸은 늘 같은 칸이고 늘 '내일'(LAST 다음 날) 것이다 */
+/* 다시 시작 알림 줄(다시시작 1절 · 0-1절) — 날짜 줄 바로 위, 지난 기록 줄과 같은 꼴. 준비 기간 마지막 밤과 새 시즌 1~7일째에만,
+   도착에도 보인다(결과 값이 아니다). 단추는 Past Logs 의 준비 기간 무리로 */
+function restartBar() {
+  if (!PREP || !LAST || PAST || !(PREP_MODE ? PREP.last : LAST.day <= 7)) return '';
+  const say = PREP_MODE ? TEXT.prepLastBar(md(PREP.day1)) : TEXT.restartBar(md(PREP.day1), md(PREP.from), md(PREP.to));
+  return `<div class="pastbar restart" id="restartBar"><span>${esc(say)}</span>` +
+         `<button type="button" id="prepGo">${esc(TEXT.prepGo)}</button></div>`;
+}
 function openBody(j, row = LAST, still = row !== LAST) {
-  const past = row !== LAST, m = moneyOf(D, row.date), v = j && verdictOf(j);
-  return (past ? pastBar(row) : '') + `<span class="eyebrow">${esc(dateLine(row))} · ${esc(WEATHER_WORD[row.weather] || '')}</span>` +
+  const past = row !== LAST, m = moneyOf(D, row.date, isPrep(row)), v = j && verdictOf(j);
+  return (past ? pastBar(row) : restartBar()) + `<span class="eyebrow">${esc(dateLine(row))} · ${esc(WEATHER_WORD[row.weather] || '')}</span>` +
     `<div class="numrow" id="bigNum" role="img" aria-label="${esc(pctOf(row.change_pct))}">` +
     `<div class="glow${still ? ' on' : ''}" id="glow" style="background:${glowOf(row)}"></div>` +
     `<span id="ledBox">${still ? ledHTML(ledStr(row.change_pct), ledColor(row)) : ledHTML(LED_DARK, null)}</span></div>` +
@@ -644,7 +676,7 @@ function frameAt(t, live = false) {
   $('#veil').hidden = t >= 400;
   skyOpacity(e2); skyUpto(t);
   ledAt(t, live);
-  const m = moneyOf(D, LAST.date);
+  const m = moneyOf(D, LAST.date, isPrep(LAST));
   if (m) $('#moneyLine').innerHTML = moneyLine({start: m.start, now: m.prevNow + (m.now - m.prevNow) * e3, today: m.today * e3},
                                                true, true, todayCls(LAST));
   $('#moneyLine').style.filter = e1 >= 1 ? '' : `blur(${(14 * (1 - e1)).toFixed(2)}px)`;
@@ -762,9 +794,13 @@ function renderConstel() {
   const svg = $('#constel');
   svg.innerHTML = s;
   svg.setAttribute('aria-label', `지금까지 뜬 별 ${due ? n - 1 : n}개와 앞으로 뜰 자리`);
-  $('#starCap').innerHTML = !n ? '' : due ? `<span>${esc(TEXT.starDue(n))}</span><b class="flat">?</b>` : capText(rows, n - 1);
+  $('#starCap').innerHTML = !n ? (PREP_MODE && PREP.last ? `<span>${esc(TEXT.firstStar(md(PREP.day1)))}</span>` : '')
+    : due ? `<span>${esc(TEXT.starDue(n))}</span><b class="flat">?</b>` : capText(rows, n - 1);
+  const note = $('#prepNote');
+  note.hidden = !PREP || PREP_MODE;
+  note.textContent = note.hidden ? '' : TEXT.prepNote;
   // 60번째 별의 날 = 1일째 + 59일(1일째 = 판정 시작 봉을 지난 첫 하루 — summary.started 는 그 봉의 날이라 하루 앞이다)
-  const day1 = rows.length ? rows[0].date : null;
+  const day1 = rows.length ? rows[0].date : PREP && PREP.last ? PREP.day1 : null;
   $('#finale').textContent = TEXT.finale(n0, day1 ? md(addDays(day1, n0 - 1)) : '');
   el.hidden = false;
 }
@@ -780,20 +816,33 @@ const thumbOf = w => `<span class="thumb${w === 'closed' ? ' dim' : ''}" data-fa
   `role="img" aria-label="${esc(FACE_WORD[faceOf(w)])}"></span>`;
 const dotDate = s => { const m = String(s || '').match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? `${+m[1]}.${m[2]}` : ''; };   // 10.28 · 11.01
 function renderNights() {
-  const el = $('#nightsSec'), rows = (D.scene && D.scene.rows) || [], shown = PAST ? PAST.date : LAST && LAST.date;
-  if (!rows.length) { el.hidden = true; return; }
-  $('#nights').innerHTML = rows.map((r, i) => {
-    const last = i === rows.length - 1, hide = last && STATE === 'arrived';
-    const label = PAST_TEXT.of(r.date) + (hide ? '' : ` · ${pctOf(r.change_pct)}`);
-    return `<button class="night${last ? ' today' : ''}" type="button" data-day="${esc(r.date)}" aria-label="${esc(label)}"` +
-           `${r.date === shown ? ' aria-current="true"' : ''}>${hide ? '<span class="frame due" aria-hidden="true"></span>' : thumbOf(r.weather)}` +
-           `<span class="dt">${esc(dotDate(r.date))}</span><b class="${hide ? 'flat' : tone(r.weather)}">${hide ? '?' : esc(pctOf(r.change_pct))}</b>` +
-           (!hide && fixOn(D, r.date) ? `<small class="fix">${esc(TEXT.fixWord)}</small>` : '') + '</button>';
-  }).join('');
+  const el = $('#nightsSec'), rows = (D.scene && D.scene.rows) || [], prep = (D.scene && D.scene.prep) || [];
+  const shown = PAST || LAST;
+  if (!rows.length && !prep.length) { el.hidden = true; return; }
+  const cell = r => {
+    const p = isPrep(r), last = r === LAST, hide = last && STATE === 'arrived';
+    const label = PAST_TEXT.of(r.date) + (p ? ` · ${TEXT.prepWord}` : '') + (hide ? '' : ` · ${pctOf(r.change_pct)}`);
+    return `<button class="night${p ? ' prep' : ''}${last ? ' today' : ''}" type="button" data-day="${esc(r.date)}" aria-label="${esc(label)}"` +
+           `${r === shown ? ' aria-current="true"' : ''}>${hide ? '<span class="frame due" aria-hidden="true"></span>' : thumbOf(r.weather)}` +
+           `<span class="dt">${esc(dotDate(r.date))}</span><b class="${hide ? 'flat' : p ? 'pm' : tone(r.weather)}">${hide ? '?' : esc(pctOf(r.change_pct))}</b>` +
+           (!hide && !p && fixOn(D, r.date) ? `<small class="fix">${esc(TEXT.fixWord)}</small>` : '') + '</button>';
+  };
+  // 준비 기간 무리는 맨 왼쪽(지난 쪽) — 무리 첫 칸 위 꼬리표, 시즌 무리와 사이에 세로 가는 선(다시시작 3절)
+  const tag = PREP ? TEXT.prepTag(dotDate(PREP.from), dotDate(PREP.to)) : '';
+  $('#nights').classList.toggle('has-prep', prep.length > 0);
+  $('#nights').innerHTML = (prep.length ? `<div class="prepgrp" id="prepGrp" role="group" aria-label="${esc(tag)}">` +
+      `<span class="ptag" aria-hidden="true">${esc(tag)}</span>${prep.map(cell).join('')}</div>` +
+      (rows.length ? '<i class="psep" aria-hidden="true"></i>' : '') : '') + rows.map(cell).join('');
   el.hidden = false;
   const n = $('#nights'), sel = PAST && n.querySelector('.night[aria-current]');
-  if (!sel) { n.scrollLeft = n.scrollWidth; return; }                    // 처음엔 맨 끝(오늘)이 보이게
-  n.scrollLeft += sel.getBoundingClientRect().left - n.getBoundingClientRect().left - (n.clientWidth - sel.offsetWidth) / 2;   // 고른 날을 가운데로
+  if (!sel) n.scrollLeft = n.scrollWidth;                               // 처음엔 맨 끝(오늘)이 보이게
+  else n.scrollLeft += sel.getBoundingClientRect().left - n.getBoundingClientRect().left - (n.clientWidth - sel.offsetWidth) / 2;   // 고른 날을 가운데로
+  nightsEdge();
+}
+/* 띠가 맨 앞(넘칠 때만)인가 — 준비 무리가 있으면 그때 왼쪽 페이드를 걷는다(CSS .has-prep.at-start) */
+function nightsEdge() {
+  const n = $('#nights');
+  if (n) n.classList.toggle('at-start', n.scrollLeft <= 1 && n.scrollWidth > n.clientWidth + 1);
 }
 /* 캡처만(#to=…) — 그 칸으로 내려가되 붙박이 머리 줄 높이만큼 덜 내려 제목이 머리 줄 밑에 숨지 않게 */
 const capScroll = el => setTimeout(() => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 64), 400);
@@ -802,7 +851,7 @@ const capScroll = el => setTimeout(() => window.scrollTo(0, el.getBoundingClient
    판의 가로는 그릴 때 실제 폭으로 잰다 — 'none' 늘이기 대신이라 컴퓨터 폭에서도 점 · 고리가 둥글다(폰은 358 그대로) */
 function renderFlow() {
   const el = $('#flow'), s = D.summary;
-  let rows = (D.equity_daily.rows || []).filter(r => r.usd != null);
+  let rows = rowsOf(D, 'equity_daily', PREP_MODE).filter(r => r.usd != null);
   if (STATE === 'arrived' && LAST) rows = rows.filter(r => r.date < LAST.date);
   // 시즌 전(장면 값 없음)에는 그리지 않는다 — 판정 시작 봉의 날 한 줄만 있어도 '연습 시작 전'과 엇갈린다
   if (!LAST || !rows.length || s.start_usd == null) { el.hidden = true; return; }
@@ -828,8 +877,9 @@ function renderFlow() {
   g += `<circle class="ring" cx="${ex}" cy="${ey}" r="6" fill="none" stroke="#f3eee7" stroke-width=".8"></circle>` +
        `<circle class="now" cx="${ex}" cy="${ey}" r="3" fill="#f3eee7"></circle>`;
   svg.innerHTML = g;
-  svg.setAttribute('aria-label', `시작 뒤 ${rows.length}일 동안의 가짜 돈 흐름`);
-  $('#chartMoney').textContent = `${short(s.start_usd)} → ${short(vals[n])}달러`;
+  svg.setAttribute('aria-label', `시작 뒤 ${rows.length}일 동안의 모의 테스트 흐름`);
+  $('#chartMoney').innerHTML = (PREP_MODE ? `<em class="ptag2">${esc(TEXT.prepWord)}</em>` : '') +
+                                esc(`${short(s.start_usd)} → ${short(vals[n])}달러`);
   $('#chartLow').textContent = min < s.start_usd ? `가장 낮을 때 ${short(min)}달러` : TEXT.worstNone;
   $('#chartFrom').textContent = md(rows[0].date);
   $('#chartTo').textContent = md(rows[rows.length - 1].date);
@@ -856,7 +906,8 @@ function renderDuel() {
   let say = b == null ? TEXT.btcNone : m == null ? '' : Math.abs(m - b) < 0.05 ? TEXT.duelNear(L.nights)
     : TEXT.duelLead(m > b ? TEXT.kong : TEXT.btcName, L.nights);
   if (veil) say = '';
-  el.innerHTML = `<div class="row"><h2>${esc(TEXT.weeksTitle)}</h2><span>${fin.length ? `${esc(TEXT.finWeeks)} ${wins}승 ${loss}패` : ''}</span></div>` +
+  const ptag = PREP_MODE ? `<em class="ptag2">${esc(TEXT.prepWord)}</em>` : '';
+  el.innerHTML = `<div class="row"><h2>${esc(TEXT.weeksTitle)}</h2><span>${ptag}${fin.length ? `${esc(TEXT.finWeeks)} ${wins}승 ${loss}패` : ''}</span></div>` +
     `<p class="range" id="duelRange">${esc(rangeText(L))}</p>` +
     `<div class="duel-body${veil ? ' veiled' : ''}"${veil ? ' aria-hidden="true"' : ''}>` +
     `<div class="duel-grid"><span>${esc(TEXT.kong)}</span><b class="${cls(m)}">${esc(pctV(m))}</b><div class="track">${bar(m)}</div>` +
@@ -872,11 +923,12 @@ function fold(title, inner, key) {
    표제 → 뜻으로 읽는 흐름이 끊긴다(디자인 대조 2026-10-19) */
 function dictHtml() {
   return '<dl class="dict">' + DICT.map(t =>
-    `<dt>${esc(t.w)}</dt><dd>${esc(t.d)}${t.rule ? `<small class="rule">${esc(TEXT.ruleTag)}</small>` : ''}` +
+    `<dt>${esc(t.w)}</dt><dd>${esc(t.d)}${t.rule ? `<small class="rule">${esc(TEXT.ruleTag(D && D.summary && D.summary.started))}</small>` : ''}` +
     `${t.alt ? `<small class="alt">${esc(TEXT.dictAlt)} · ${esc(t.alt)}</small>` : ''}</dd>`).join('') + '</dl>';
 }
 function renderFolds() {
-  let html = fold(TEXT.howTitle, `<p>${esc(TEXT.how)}</p>`);
+  const why = PREP && PREP.last ? `<p class="prepwhy">${esc(TEXT.prepWhy(md(PREP.day1), md(PREP.from), md(PREP.to)))}</p>` : '';
+  let html = fold(TEXT.howTitle, `${why}<p>${esc(TEXT.how)}</p>`, 'how');
   html += fold(TEXT.dictTitle(DICT.length), dictHtml(), 'dict');
   // 정정은 지우지 않고 모아 둔다(정정 규약). 작업 로그(밤 정리 세 줄)는 거래 기록이 아니라 뺐다(글규칙 데이터우선 1절)
   const fixP = fixesOf(D).slice().reverse().map(f =>
@@ -906,12 +958,13 @@ function renderLower() { renderConstel(); renderNights(); renderFlow(); renderDu
    '오늘 기록으로' 면 그 상태로 돌아간다(도착이면 다시 '열기'). 아래 칸들(별 · 지난 밤들 · 흐름 선 · 맞대결)은 그 상태 그대로 ── */
 const PAST_TEXT = {of: d => `${md(d)} ${dow(d)}요일 기록`, back: '오늘 기록으로'};
 let PAST = null;                      // 보고 있는 지난날의 scene 줄(없으면 오늘)
-const pastBar = row => `<div class="pastbar" id="pastBar"><span>${esc(PAST_TEXT.of(row.date))}</span>` +
+const pastBar = row => `<div class="pastbar" id="pastBar"><span>${esc(PAST_TEXT.of(row.date) + (isPrep(row) ? ` · ${TEXT.prepWord}` : ''))}</span>` +
   `<button type="button" id="pastBack">${esc(PAST_TEXT.back)}</button></div>`;
-/* 그날 줄 — 장면 줄에 있는 지난날만. 오늘 · 앞날 · 없는 날 · 틀린 꼴(장면 줄에 없다)은 null(= 오늘로) */
+/* 그날 줄 — 장면 줄(준비 기간 줄 포함)에 있는 지난날만. 오늘 · 앞날 · 없는 날 · 틀린 꼴(장면 줄에 없다)은 null(= 오늘로).
+   준비 기간 장면 날과 시즌 장면 날은 겹치지 않는다(시즌 1일째 = 준비 기간 끝 다음 날) */
 function pastRow(d) {
   if (!LAST || d >= LAST.date) return null;
-  return D.scene.rows.find(r => r.date === d) || null;
+  return [...(D.scene.prep || []), ...D.scene.rows].find(r => r.date === d) || null;
 }
 /* 그날 맞힘 — 이 기기가 그날을 판정해 둔 것(judge 가 남긴다). 없으면 맞힘 줄을 안 그린다 */
 function pastJudge(date) {
@@ -922,7 +975,7 @@ function showPast(row) {
   PAST = row;
   ANIM++;                             // 돌던 열기 움직임이 있으면 멈춘다
   $('#first').dataset.past = row.date;
-  $('#topRight').textContent = TEXT.nextAt;
+  $('#topRight').textContent = isPrep(row) ? TEXT.prepWord : TEXT.nextAt;     // 준비 기간 날은 '준비 기간'(n일째가 아니다)
   $('#veil').hidden = true;
   $('#window').dataset.weather = row.weather;
   tint(row.weather);
@@ -954,8 +1007,11 @@ function pickDay(d) {
 
 function render(data) {
   D = data;
-  const rows = (D.scene && D.scene.rows) || [];
-  LAST = rows.length ? rows[rows.length - 1] : null;
+  const rows = (D.scene && D.scene.rows) || [], prepRows = (D.scene && D.scene.prep) || [], sp = D.summary && D.summary.prep;
+  PREP = sp && sp.from && sp.to ? {from: sp.from, to: sp.to, nights: sp.nights, last: sp.last !== false,
+                                     day1: D.summary.season_start || addDays(sp.to, 1)} : null;
+  PREP_MODE = !!PREP && !rows.length && prepRows.length > 0;
+  LAST = rows.length ? rows[rows.length - 1] : PREP_MODE ? prepRows[prepRows.length - 1] : null;
   renderFolds(); renderFoot(D.site);
   // 그날 날씨는 연 뒤(기다릴 때는 이미 연 날)에만 싣는다 — 도착의 DOM 에 결과가 새지 않게(감사 · 기획 2026-10-19)
   $('#window').dataset.weather = 'none';
@@ -1024,7 +1080,13 @@ document.addEventListener('click', ev => {
   box.querySelectorAll('.pick').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
   if (STATE === 'arrived') veilGuess();
 });
-document.addEventListener('click', ev => {             // 지난 칸 · '오늘 기록으로'
+document.addEventListener('click', ev => {             // 지난 칸 · '오늘 기록으로' · '준비 기간 보기'
+  if (ev.target.closest('#prepGo')) {
+    const n = $('#nights');
+    $('#nightsSec').scrollIntoView({behavior: reduced() ? 'auto' : 'smooth'});
+    if (n) n.scrollTo({left: 0, behavior: reduced() ? 'auto' : 'smooth'});
+    return;
+  }
   const c = ev.target.closest('#nights .night');
   if (c) { pickDay(c.dataset.day); return; }
   if (ev.target.closest('#pastBack')) pickDay(null);
@@ -1033,6 +1095,7 @@ window.addEventListener('hashchange', () => {        // 주소 꼬리를 손으�
   const row = pastRow(new URLSearchParams(location.hash.slice(1)).get('d'));
   if (row) showPast(row); else toToday();
 });
+$('#nights').addEventListener('scroll', nightsEdge, {passive: true});
 $('#constel').addEventListener('click', showStar);
 $('#constel').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute('data-star')) { e.preventDefault(); showStar(e); } });
 document.addEventListener('visibilitychange', () => {

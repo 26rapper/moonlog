@@ -100,6 +100,10 @@ button:focus-visible { outline: 2px solid var(--up); outline-offset: 3px; }
             box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 18%, transparent); }
 .up { color: var(--up); } .down { color: var(--down); } .flat { color: var(--ink-2); }
 .blur { filter: blur(14px); opacity: .7; user-select: none; }
+/* 도착의 금액 줄 — 숫자만 흐리게. '1만 달러로 시작한 모의 테스트' 는 첫 화면에서 읽혀야 한다(기획 조건 ② — '최종점검' 과 '모의' 가
+   접지 않은 첫 화면에 같이). 숫자는 전날 끝 값이라 누설은 아니지만 흐림의 결은 그대로 */
+.money.blur { filter: none; opacity: 1; }
+.money.blur b { filter: blur(9px); opacity: .7; }
 .pre { margin-top: 22px; }
 .picks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .pick { font-family: var(--f-ui); font-size: 15px; font-weight: 600; color: var(--ink); background: transparent;
@@ -179,6 +183,20 @@ details > div .fix { color: var(--ink); }
 .night small.fix { font-size: 10px; line-height: 1.2; color: var(--muted); margin-top: 2px; }
 /* 보이는 날(오늘 · 고른 날) — 사진에 크림 outline 1.5px · 3px 띄움 */
 .night[aria-current="true"] .thumb { outline: 1.5px solid var(--ink); outline-offset: 3px; }
+/* 준비 기간 무리(60밤 다시 시작 3절) — 맨 왼쪽 · 첫 칸 위 꼬리표 11px 흐리게 · 사진 0.55 · % 는 손익 색 대신 흐린 크림(시즌 수 밖 표시).
+   무리와 시즌 무리 사이 세로 선 1px · 크림 14% · 사진 높이, 여백 14px(띠 사이 10 + 4) */
+.nights.has-prep { padding-top: 24px; }
+.prepgrp { position: relative; display: flex; gap: 10px; flex: 0 0 auto; }
+.prepgrp .ptag { position: absolute; top: -20px; left: 0; font-size: 11px; line-height: 1; color: var(--muted); white-space: nowrap; }
+.night.prep .thumb { opacity: .55; }
+.night.prep[aria-current="true"] .thumb { opacity: 1; }   /* 고른 준비 기간 칸 — 흐리면 크림 outline 도 같이 흐려진다(디자인창2) */
+/* 준비 무리가 있는 띠를 맨 앞까지 넘기면 왼쪽 페이드를 걷는다 — 더 지난 날이 없고, 페이드가 꼬리표 첫 글자를 덮는다(디자인창2) */
+.nights.has-prep.at-start { -webkit-mask-image: none; mask-image: none; }
+.night.prep b.pm { color: var(--muted); }
+.psep { flex: 0 0 1px; height: 98px; margin: 0 4px; background: rgba(243,238,231,.14); }
+.prepnote { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.ptag2 { font-style: normal; font-size: 11px; color: var(--muted); margin-right: 8px; }
+.prepwhy { color: var(--ink-2); }
 @media (hover: hover) { .night:hover .thumb { transform: translateY(-2px); } }
 /* 첫 화면 바로 위 줄 — '{날짜} 기록' + 오른쪽 '오늘 기록으로'(밑줄 단추) · 12.5px · 위아래 8px · 머리카락 테두리 · 둥글기 12 · 크림 4% */
 .pastbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 0 0 12px; padding: 8px 12px;

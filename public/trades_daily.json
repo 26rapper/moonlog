@@ -1,41 +1,48 @@
 {
  "as_of": "2026-10-19",
- "rows": [
+ "rows": [],
+ "prep": [
   {
    "date": "2026-10-14",
    "opened": 4,
    "closed": 0,
-   "won": 0
+   "won": 0,
+   "phase": "prep"
   },
   {
    "date": "2026-10-15",
    "opened": 14,
    "closed": 14,
-   "won": 11
+   "won": 11,
+   "phase": "prep"
   },
   {
    "date": "2026-10-16",
    "opened": 16,
    "closed": 16,
-   "won": 7
+   "won": 7,
+   "phase": "prep"
   },
   {
    "date": "2026-10-17",
    "opened": 13,
    "closed": 15,
-   "won": 6
+   "won": 6,
+   "phase": "prep"
   },
   {
    "date": "2026-10-18",
    "opened": 20,
    "closed": 12,
-   "won": 7
+   "won": 7,
+   "phase": "prep"
   },
   {
    "date": "2026-10-19",
    "opened": 11,
    "closed": 21,
-   "won": 18
+   "won": 18,
+   "phase": "prep"
   }
  ]
 }

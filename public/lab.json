@@ -14,55 +14,55 @@
    "result": "지켜보는 중"
   },
   {
-   "label": "실험 26-a-i",
+   "label": "실험 26-ai",
    "title": "시각·요일 힌트 빼 보기",
    "kind": "fail",
    "result": "기준 못 넘음"
   },
   {
-   "label": "실험 26-a-h",
+   "label": "실험 26-ah",
    "title": "같은 낙폭에서 다시 재기",
    "kind": "fail",
    "result": "기준 못 넘음"
   },
   {
-   "label": "실험 26-a-g",
+   "label": "실험 26-ag",
    "title": "보수적으로 배우기",
    "kind": "fail",
    "result": "기준 못 넘음"
   },
   {
-   "label": "실험 26-a-f",
+   "label": "실험 26-af",
    "title": "힌트 절반 덜어내기",
    "kind": "fail",
    "result": "기준 못 넘음"
   },
   {
-   "label": "실험 26-a-e",
+   "label": "실험 26-ae",
    "title": "선물 이자 힌트",
    "kind": "fail",
    "result": "기준 못 넘음"
   },
   {
-   "label": "실험 26-a-d",
+   "label": "실험 26-ad",
    "title": "남보다 오를 종목을 배우기",
    "kind": "fail",
    "result": "기준 못 넘음"
   },
   {
-   "label": "실험 26-a-c",
+   "label": "실험 26-ac",
    "title": "모형이 배우는 정답을 4시간 뒤로",
    "kind": "fail",
    "result": "기준 못 넘음"
   },
   {
-   "label": "실험 26-a-b",
+   "label": "실험 26-ab",
    "title": "모형 열 개 평균",
    "kind": "fail",
    "result": "기준 못 넘음"
   },
   {
-   "label": "실험 26-a-a",
+   "label": "실험 26-aa",
    "title": "바이낸스 줄만으로 배우기",
    "kind": "fail",
    "result": "기준 못 넘음"
@@ -93,7 +93,7 @@
   },
   {
    "label": "실험 26-s2",
-   "title": "자료를 API 판으로 갈아 다시 재기",
+   "title": "거래소에서 받은 자료로 다시 재기",
    "kind": "stopped",
    "result": "중단"
   },
@@ -122,8 +122,8 @@
    "result": "기준 못 넘음"
   },
   {
-   "label": "실험 26-v-w",
-   "title": "/26-w 확신만큼 크게 걸기 · 한쪽 방향만 깐깐하게",
+   "label": "실험 26-v/26-w",
+   "title": "확신만큼 크게 걸기 · 한쪽 방향만 깐깐하게",
    "kind": "fail",
    "result": "기준 못 넘음"
   },
@@ -170,7 +170,7 @@
    "result": "기준 넘음"
   },
   {
-   "label": "실험 26-k-l",
+   "label": "실험 26-k/l",
    "title": "살 종목을 넓히거나 자리를 늘리기",
    "kind": "fail",
    "result": "기준 못 넘음"
@@ -321,7 +321,7 @@
   },
   {
    "label": "실험 1-b",
-   "title": "-b 유튜버 이평선 전 종목 하루치 훑기",
+   "title": "유튜버 이평선 전 종목 하루치 훑기",
    "kind": "fail",
    "result": "기준 못 넘음"
   },
@@ -363,7 +363,7 @@
   },
   {
    "label": "번호 없는 실험",
-   "title": "양쪽 걸기 가짜 돈 확인",
+   "title": "양쪽 걸기 모의 확인",
    "kind": "fail",
    "result": "기준 못 넘음"
   },

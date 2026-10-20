@@ -87,7 +87,7 @@ const FLAT = 0.10, BIG = 1.00;
 const SEASON_DAYS = 60;
 const WEATHER_WORD = {clear_star: '별똥별', clear: '맑음', cloudy: '구름', rain: '비', storm: '폭우', closed: '쉼'};
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
-const LAW = '가짜 돈 연습 · 실제 투자 아님 · 종목 추천 없음';
+const LAW = '모의 투자 · 실제 투자 아님 · 종목 추천 없음';
 const BRAND = {en: 'Moonlog', ko: '문로그'};   // 글자표 — 영문이 앞, 한글이 작게(문로그 지시 2절). 그림 출처 줄은 지웠다(4-1)
 /* 얼굴 — 사이트와 같은 짝(그날 날씨가 얼굴을 고른다). ① 질문은 늘 무표정 */
 const FACE_SRC = f => `assets/face/${f}.webp`;
@@ -114,6 +114,7 @@ const pctOf = x => x == null ? '쉼' : pct(x, places(x));
 const tone = w => w === 'clear' || w === 'clear_star' ? 'up' : w === 'rain' || w === 'storm' ? 'down' : 'flat';
 const md = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${+m[2]}월 ${+m[3]}일` : ''; };
 const dow = s => DAYS[new Date(s + 'T00:00:00Z').getUTCDay()];
+const addDays = (iso, n) => { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const usdWord = n => n === 10000 ? '1만 달러' : Math.round(n).toLocaleString('en-US') + '달러';
 const usdSigned = n => Math.round(n) === 0 ? '그대로' : (n > 0 ? '+' : '−') + Math.abs(Math.round(n)).toLocaleString('en-US') + '달러';
 
@@ -165,9 +166,17 @@ const FIX_SAY = '어제 숫자 정정.';
 const FIX_SAY_WEEK = '비트코인 주간 숫자 정정.';   // 그 밤 정정이 주간 비트코인뿐일 때(어제 숫자가 아니라서)
 
 /* 그날 거래 줄(정리 · 이긴 것) — 원고 캡션 둘째 줄 */
-const tradesOf = (D, date) => ((D && D.trades_daily && D.trades_daily.rows) || []).find(r => r.date === date) || {};
-function moneyOf(D, date) {
-  const rows = D.equity_daily.rows || [], i = rows.findIndex(r => r.date === date), start = D.summary.start_usd;
+/* 60밤 다시 시작(오너 결정 2026-10-20 · 디자인 지시 다시시작 6절) — 준비 기간 줄(prep · phase 'prep')은 시즌 수 밖. 그날이
+   준비 기간이면 prep 목록에서 찾는다(사이트와 같은 규칙). PREP = {from, to, nights, day1} */
+const isPrep = row => !!row && row.phase === 'prep';
+const rowsOf = (D, name, prep) => (D && D[name] && (prep ? D[name].prep : D[name].rows)) || [];
+let PREP = null;
+const prepDay = d => PREP ? Math.round((Date.parse(d + 'T00:00:00Z') - Date.parse(PREP.from + 'T00:00:00Z')) / 864e5) + 1 : 0;
+const PREP_DAY = n => `준비 기간 ${n}일째`;
+const RESTART_LINE = () => `${md(PREP.day1)} 밤부터 60밤을 새로 센다. ${md(PREP.from)}~${md(PREP.to)}은 준비 기간.`;
+const tradesOf = (D, date, prep = false) => rowsOf(D, 'trades_daily', prep).find(r => r.date === date) || {};
+function moneyOf(D, date, prep = false) {
+  const rows = rowsOf(D, 'equity_daily', prep), i = rows.findIndex(r => r.date === date), start = D.summary.start_usd;
   if (i < 0 || start == null) return null;
   const prev = i > 0 ? rows[i - 1].usd : start;
   return {start, now: rows[i].usd, today: rows[i].usd - prev};
@@ -274,8 +283,8 @@ function win(kind, face, look, veil) {
   return `<div class="win"><img id="photo" src="${FACE_SRC(face)}" alt=""${look ? ` class="${look}"` : ''}${lit} data-face="${face}">` +
          weather(kind, look === 'fogged') + (veil ? `<div class="veil">${veil}</div>` : '') + '</div>';
 }
-function head(day, total) {
-  return `<div class="hd"><b><span class="wm-en">${esc(BRAND.en)}</span><span class="wm-ko">${esc(BRAND.ko)}</span></b><span>${Math.min(day, total)}일째 / ${total}</span></div><div class="law">${esc(LAW)}</div>`;
+function head(day, total, label) {
+  return `<div class="hd"><b><span class="wm-en">${esc(BRAND.en)}</span><span class="wm-ko">${esc(BRAND.ko)}</span></b><span>${esc(label || `${Math.min(day, total)}일째 / ${total}`)}</span></div><div class="law">${esc(LAW)}</div>`;
 }
 const safeHtml = () => '<div class="safe"' + (Q.get('debug') === 'safe' ? '' : ' hidden') + '>' +
   SAFE.map(z => `<i style="left:${z.x0}px;width:${z.x1 - z.x0}px;top:${z.y0}px;height:${z.y1 - z.y0}px"></i>`).join('') + '</div>';
@@ -291,36 +300,38 @@ function fixCard(D, row) {
 /* 그날 켜는 LED 글 — ① 은 늘 꺼진 판 */
 const ledFor = (row, frame) => frame === '1' ? LED_DARK : ledStr(row.change_pct);
 function render(D, row) {
-  const total = (D.summary && D.summary.days_total) || SEASON_DAYS, m = moneyOf(D, row.date), c = row.change_pct;
+  const total = (D.summary && D.summary.days_total) || SEASON_DAYS, p = isPrep(row), m = moneyOf(D, row.date, p), c = row.change_pct;
   const date = md(row.date), word = WEATHER_WORD[row.weather] || '', face = faceOf(row.weather);
+  // 준비 기간 날(준비 기간 마지막 밤) — 머리 '준비 기간 n일째', 날짜 줄도 같은 말, 별은 아직 0개(시즌 수 밖)
+  const dayWord = p ? PREP_DAY(prepDay(row.date)) : `${total}일 중 ${row.day}일째`, lit0 = p ? 0 : row.day;
   const t = tone(row.weather), lit = c == null ? LED_REST : LED_COLOR[t];
   const sky = SKY_TINT[FRAME === '1' ? 'clear' : row.weather] || SKY_TINT.clear;
   $('#card').style.setProperty('--sky-a', sky[0]);
   $('#card').style.setProperty('--sky-b', sky[1]);
-  let h = head(row.day, total);
+  let h = head(row.day, total, p ? PREP_DAY(prepDay(row.date)) : '');
   if (FRAME === '1') {
     // ① 가림말은 그날 날짜 + '기록'(글규칙 데이터우선 2절). 아래는 날짜 줄과 꺼진 LED 만 — 말 거는 줄은 뺐다(디자인 대조)
     h += win(row.weather, 'deadpan', 'fogged', `${esc(date)} 기록`) +
-      `<div class="body"><span class="eb">${esc(date)} ${dow(row.date)}요일 · ${total}일 중 ${row.day}일째</span>` +
+      `<div class="body"><span class="eb">${esc(date)} ${dow(row.date)}요일 · ${esc(dayWord)}</span>` +
       `<span class="ledbox">${ledHTML(LED_DARK, null)}</span></div>` +
-      `<div class="stars">${stars(row.day - 1, false)}</div>`;
+      `<div class="stars">${stars(Math.max(lit0 - 1, 0), false)}</div>`;
   } else if (FRAME === '3') {
     // ③ 60 Nights · 별 n개 / 다음 기록 내일 밤 9시 20분(글규칙 데이터우선 2절 · 영문 제목 A). 위 작은 줄은 날짜 — 별 수를 두 번 쓰지 않게
     h += win(row.weather, face, '') +
       `<div class="body"><span class="eb">${esc(date)} ${dow(row.date)}요일</span>` +
-      `<span class="next n1">60 Nights · 별 ${Math.min(row.day, total)}개</span>` +
+      `<span class="next n1">${p && PREP.last ? esc(`60 Nights · ${md(PREP.day1)} 밤에 첫 별`) : `60 Nights · 별 ${p ? 0 : Math.min(row.day, total)}개`}</span>` +
       '<span class="next n2">다음 기록 <br>내일 밤 9시 20분</span>' +
       '<span class="money cta">미리 찍기 · 프로필 링크</span>' + fixCard(D, row) + '</div>' +
-      `<div class="stars">${stars(row.day, true)}</div>`;
+      `<div class="stars">${stars(lit0, !p)}</div>`;
   } else {
     // ② 결과 — LED + 금액 줄만(생성 글 자막은 지웠다, 글규칙 데이터우선 1절)
     h += win(row.weather, face, '') +
       (c == null ? '' : `<div class="glow" style="background:radial-gradient(circle,${LED_COLOR[t]}40,transparent 70%)"></div>`) +
       `<div class="body"><span class="eb">${esc(date)} ${dow(row.date)}요일 · ${esc(word)}</span>` +
       `<span class="ledbox" role="img" aria-label="${esc(pctOf(c))}">${ledHTML(ledStr(c), lit)}</span>` +
-      (m ? `<span class="money">가짜 돈 ${esc(usdWord(m.start))}로 시작 → 지금 <b>${esc(usdWord(m.now))}</b><br>` +
+      (m ? `<span class="money">${esc(usdWord(m.start))}로 시작한 모의 테스트 → 지금 <b>${esc(usdWord(m.now))}</b><br>` +
            `오늘 <b class="${c == null ? '' : t}">${esc(usdSigned(m.today))}</b></span>` : '') + '</div>' +
-      `<div class="stars">${stars(row.day, false)}</div>`;
+      `<div class="stars">${stars(lit0, false)}</div>`;
   }
   $('#card').innerHTML = h + safeHtml();
   $('#card').classList.toggle('has-fix', FRAME === '3' && fixesOf(D).some(f => f.as_of === row.date));
@@ -329,9 +340,9 @@ function render(D, row) {
 /* 원고.txt — 고정 꼴(디자인 글규칙 데이터우선 3절), 카드와 같은 값으로. 쉰 날은 ② '쉼 · 거래 없음'(정리가 있었으면
    '쉼 · 정리 n건') · 캡션 둘째 줄 '자료 못 받음.' */
 function script(D, row) {
-  const total = (D.summary && D.summary.days_total) || SEASON_DAYS, m = moneyOf(D, row.date), c = row.change_pct;
+  const total = (D.summary && D.summary.days_total) || SEASON_DAYS, p = isPrep(row), m = moneyOf(D, row.date, p), c = row.change_pct;
   const date = md(row.date), rest = c == null;
-  const t = Object.assign({closed: 0, won: 0}, tradesOf(D, row.date));
+  const t = Object.assign({closed: 0, won: 0}, tradesOf(D, row.date, p));
   const fixes = fixesOf(D).filter(f => f.as_of === row.date);
   const result = rest ? (t.closed ? `쉼 · 정리 ${t.closed}건` : '쉼 · 거래 없음') : m ? `${pctOf(c)} · ${usdSigned(m.today)}` : pctOf(c);
   return [
@@ -341,8 +352,10 @@ function script(D, row) {
     `10~15초 ③ 자막: "${NEXT_LINE}"`,
     '',
     '캡션:',
-    `${row.day}일째 / ${total}. 오늘 ${pctOf(c)}` + (m ? `, 최종 잔고 ${usdWord(m.now)}.` : '.'),
+    `${p ? PREP_DAY(prepDay(row.date)) : `${row.day}일째 / ${total}`}. 오늘 ${pctOf(c)}` + (m ? `, 최종 잔고 ${usdWord(m.now)}.` : '.'),
     rest ? '자료 못 받음.' : `정리 ${t.closed}건 · 이긴 것 ${t.won} · 진 것 ${t.closed - t.won}.`,
+    // 다시 시작 한 줄 — 준비 기간 마지막 밤과 새 시즌 1~3일째, 법 줄 바로 위(다시시작 6절)
+    ...(PREP && PREP.last && (p || row.day <= 3) ? [RESTART_LINE()] : []),
     LAW,
     // 정정 — 법 줄 바로 아래 한 줄씩(그 밤 나온 것, 둘까지). 해시태그는 늘 맨 끝(디자인 대조 2026-10-15)
     ...fixes.slice(0, 2).map(f => `정정: ${fixText(f)} (${f.why})`),
@@ -386,8 +399,12 @@ async function main() {
     const names = ['scene', 'summary', 'equity_daily', 'trades_daily', 'diary'], D = {};
     const got = await Promise.all(names.map(n => fetch(`public/${n}.json`, {cache: 'no-cache'}).then(r => { if (!r.ok) throw new Error(n); return r.json(); })));
     names.forEach((n, i) => { D[n] = got[i]; });
-    const rows = (D.scene && D.scene.rows) || [], want = Q.get('date');
-    const row = want ? rows.find(r => r.date === want) : rows[rows.length - 1];
+    const sp = D.summary && D.summary.prep, prep = (D.scene && D.scene.prep) || [];
+    PREP = sp && sp.from && sp.to ? {from: sp.from, to: sp.to, nights: sp.nights, last: sp.last !== false,
+                                     day1: D.summary.season_start || addDays(sp.to, 1)} : null;
+    // 시즌 줄이 아직 없으면(준비 기간 마지막 밤) 그날 카드는 준비 기간 마지막 날
+    const rows = (D.scene && D.scene.rows) || [], want = Q.get('date'), all = PREP && !rows.length ? prep : rows;
+    const row = want ? [...rows, ...prep].find(r => r.date === want) : all[all.length - 1];
     if (!row || row.day == null) { done({skip: 'prestart', ready: '1'}); return; }            // 시작 전 — 카드를 만들지 않는다
     if (FRAME === 'script') { $('#card').hidden = true; $('#script').hidden = false; $('#script').textContent = script(D, row); }
     else render(D, row);

@@ -1,7 +1,8 @@
 {
  "as_of": "2026-10-19",
  "season_verdict": null,
- "rows": [
+ "rows": [],
+ "prep": [
   {
    "date": "2026-10-15",
    "day": 1,
@@ -10,7 +11,8 @@
    "pose": "sip",
    "act": "done",
    "sprout": 0,
-   "events": []
+   "events": [],
+   "phase": "prep"
   },
   {
    "date": "2026-10-16",
@@ -22,7 +24,8 @@
    "sprout": 0,
    "events": [
     "new_low"
-   ]
+   ],
+   "phase": "prep"
   },
   {
    "date": "2026-10-17",
@@ -34,7 +37,8 @@
    "sprout": 0,
    "events": [
     "new_low"
-   ]
+   ],
+   "phase": "prep"
   },
   {
    "date": "2026-10-18",
@@ -44,7 +48,8 @@
    "pose": "sip",
    "act": "done",
    "sprout": 0,
-   "events": []
+   "events": [],
+   "phase": "prep"
   },
   {
    "date": "2026-10-19",
@@ -57,7 +62,8 @@
    "events": [
     "new_high",
     "vs_win"
-   ]
+   ],
+   "phase": "prep"
   }
  ]
 }

@@ -173,6 +173,10 @@ const rowsOf = (D, name, prep) => (D && D[name] && (prep ? D[name].prep : D[name
 let PREP = null;
 const prepDay = d => PREP ? Math.round((Date.parse(d + 'T00:00:00Z') - Date.parse(PREP.from + 'T00:00:00Z')) / 864e5) + 1 : 0;
 const PREP_DAY = n => `준비 기간 ${n}일째`;
+/* 모형 교체 알림 한 줄 — 교체 밤부터 사흘 동안 원고 캡션 법 줄 아래(오너 결정 2026-10-20 · 정정 아님). 날짜는 summary.model_swap */
+const hourWord = h => h === 0 ? '밤 12시' : `${h < 6 ? '새벽' : h < 12 ? '아침' : h < 17 ? '낮' : h < 21 ? '저녁' : '밤'} ${h % 12 || 12}시`;
+const SWAP_LINE = s => `${md(s.date)} ${hourWord(s.hh)}부터 모형이 거래소 공개 자료로 배운 것으로 바뀜. 기록은 이어짐.`;
+const SWAP_DAYS = 3;
 const RESTART_LINE = () => `${md(PREP.day1)} 밤부터 60밤을 새로 센다. ${md(PREP.from)}~${md(PREP.to)}은 준비 기간.`;
 const tradesOf = (D, date, prep = false) => rowsOf(D, 'trades_daily', prep).find(r => r.date === date) || {};
 function moneyOf(D, date, prep = false) {
@@ -357,6 +361,8 @@ function script(D, row) {
     // 다시 시작 한 줄 — 준비 기간 마지막 밤과 새 시즌 1~3일째, 법 줄 바로 위(다시시작 6절)
     ...(PREP && PREP.last && (p || row.day <= 3) ? [RESTART_LINE()] : []),
     LAW,
+    ...(D.summary && D.summary.model_swap && row.date >= D.summary.model_swap.date &&
+        row.date < addDays(D.summary.model_swap.date, SWAP_DAYS) ? [SWAP_LINE(D.summary.model_swap)] : []),
     // 정정 — 법 줄 바로 아래 한 줄씩(그 밤 나온 것, 둘까지). 해시태그는 늘 맨 끝(디자인 대조 2026-10-15)
     ...fixes.slice(0, 2).map(f => `정정: ${fixText(f)} (${f.why})`),
     ...(fixes.length > 2 ? [fixMore(fixes.length - 2)] : []),

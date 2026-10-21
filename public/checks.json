@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-19",
+ "as_of": "2026-10-21",
  "rows": [
   {
    "date": "2026-10-13",
@@ -54,6 +54,24 @@
    "cost_assumed": 0.092,
    "cost_ratio": 1.56,
    "maker_fill": 60.0
+  },
+  {
+   "date": "2026-10-19",
+   "same_call": 100.0,
+   "same_call_7d": 100.0,
+   "cost_rt": 0.099,
+   "cost_assumed": 0.082,
+   "cost_ratio": 1.22,
+   "maker_fill": 81.8
+  },
+  {
+   "date": "2026-10-20",
+   "same_call": 100.0,
+   "same_call_7d": 100.0,
+   "cost_rt": 0.108,
+   "cost_assumed": 0.071,
+   "cost_ratio": 1.52,
+   "maker_fill": 81.2
   }
  ]
 }

@@ -1,8 +1,7 @@
 {
- "as_of": "2026-10-19",
+ "as_of": "2026-10-21",
  "season_verdict": null,
- "rows": [],
- "prep": [
+ "rows": [
   {
    "date": "2026-10-15",
    "day": 1,
@@ -11,8 +10,7 @@
    "pose": "sip",
    "act": "done",
    "sprout": 0,
-   "events": [],
-   "phase": "prep"
+   "events": []
   },
   {
    "date": "2026-10-16",
@@ -24,8 +22,7 @@
    "sprout": 0,
    "events": [
     "new_low"
-   ],
-   "phase": "prep"
+   ]
   },
   {
    "date": "2026-10-17",
@@ -37,8 +34,7 @@
    "sprout": 0,
    "events": [
     "new_low"
-   ],
-   "phase": "prep"
+   ]
   },
   {
    "date": "2026-10-18",
@@ -48,8 +44,7 @@
    "pose": "sip",
    "act": "done",
    "sprout": 0,
-   "events": [],
-   "phase": "prep"
+   "events": []
   },
   {
    "date": "2026-10-19",
@@ -62,8 +57,34 @@
    "events": [
     "new_high",
     "vs_win"
-   ],
-   "phase": "prep"
+   ]
+  },
+  {
+   "date": "2026-10-20",
+   "day": 6,
+   "change_pct": -2.03,
+   "weather": "storm",
+   "pose": "melt",
+   "act": "done",
+   "sprout": 0,
+   "events": [
+    "new_low",
+    "vs_win"
+   ]
+  },
+  {
+   "date": "2026-10-21",
+   "day": 7,
+   "change_pct": -2.35,
+   "weather": "storm",
+   "pose": "melt",
+   "act": "done",
+   "sprout": 0,
+   "events": [
+    "new_low",
+    "vs_win"
+   ]
   }
- ]
+ ],
+ "prep": []
 }

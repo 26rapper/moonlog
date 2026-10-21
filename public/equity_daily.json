@@ -1,7 +1,6 @@
 {
- "as_of": "2026-10-19",
- "rows": [],
- "prep": [
+ "as_of": "2026-10-21",
+ "rows": [
   {
    "date": "2026-10-14",
    "pct": -0.02,
@@ -9,8 +8,7 @@
    "day_low_usd": -2,
    "day_low_hh": 21,
    "day_high_usd": -2,
-   "day_high_hh": 21,
-   "phase": "prep"
+   "day_high_hh": 21
   },
   {
    "date": "2026-10-15",
@@ -19,8 +17,7 @@
    "day_low_usd": 108,
    "day_low_hh": 9,
    "day_high_usd": 382,
-   "day_high_hh": 21,
-   "phase": "prep"
+   "day_high_hh": 21
   },
   {
    "date": "2026-10-16",
@@ -29,8 +26,7 @@
    "day_low_usd": -201,
    "day_low_hh": 1,
    "day_high_usd": -56,
-   "day_high_hh": 13,
-   "phase": "prep"
+   "day_high_hh": 13
   },
   {
    "date": "2026-10-17",
@@ -39,8 +35,7 @@
    "day_low_usd": -157,
    "day_low_hh": 5,
    "day_high_usd": -44,
-   "day_high_hh": 21,
-   "phase": "prep"
+   "day_high_hh": 21
   },
   {
    "date": "2026-10-18",
@@ -49,8 +44,7 @@
    "day_low_usd": -46,
    "day_low_hh": 13,
    "day_high_usd": 33,
-   "day_high_hh": 17,
-   "phase": "prep"
+   "day_high_hh": 17
   },
   {
    "date": "2026-10-19",
@@ -59,8 +53,26 @@
    "day_low_usd": 211,
    "day_low_hh": 1,
    "day_high_usd": 763,
-   "day_high_hh": 13,
-   "phase": "prep"
+   "day_high_hh": 13
+  },
+  {
+   "date": "2026-10-20",
+   "pct": 8.18,
+   "usd": 10818,
+   "day_low_usd": -250,
+   "day_low_hh": 17,
+   "day_high_usd": 0,
+   "day_high_hh": 1
+  },
+  {
+   "date": "2026-10-21",
+   "pct": 5.64,
+   "usd": 10564,
+   "day_low_usd": -255,
+   "day_low_hh": 21,
+   "day_high_usd": -106,
+   "day_high_hh": 5
   }
- ]
+ ],
+ "prep": []
 }

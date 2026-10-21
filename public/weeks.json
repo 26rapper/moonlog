@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-19",
+ "as_of": "2026-10-21",
  "rows": [
   {
    "week_start": "2026-10-12",
@@ -9,16 +9,16 @@
   },
   {
    "week_start": "2026-10-19",
-   "kong_pct": 7.35,
-   "btc_pct": 0.34,
-   "trades": 21
+   "kong_pct": 2.7,
+   "btc_pct": 1.74,
+   "trades": 54
   }
  ],
  "last7": {
   "from": "2026-10-15",
-  "to": "2026-10-19",
-  "nights": 5,
-  "moonlog_pct": 10.44,
-  "btc_pct": -1.32
+  "to": "2026-10-21",
+  "nights": 7,
+  "moonlog_pct": 5.66,
+  "btc_pct": 0.05
  }
 }

@@ -1,23 +1,22 @@
 {
- "as_of": "2026-10-19",
+ "as_of": "2026-10-21",
  "started": "2026-10-14",
  "start_usd": 10000,
- "equity_usd": 11042,
- "day": null,
+ "equity_usd": 10564,
+ "day": 7,
  "days_total": 60,
- "total_pct": 10.42,
- "worst_drop_pct": -1.11,
- "closed": 78,
- "won": 49,
- "won_share": 62.8,
+ "total_pct": 5.64,
+ "worst_drop_pct": -4.33,
+ "closed": 111,
+ "won": 58,
+ "won_share": 52.3,
  "btc_week_start": "2026-10-19",
- "btc_hold_week_pct": 0.34,
+ "btc_hold_week_pct": 1.74,
  "btc_hold_prev_week_pct": -1.66,
- "season_start": null,
- "prep": {
-  "from": "2026-10-14",
-  "to": "2026-10-19",
-  "last": false,
-  "nights": 6
- }
+ "season_start": "2026-10-15",
+ "model_swap": {
+  "date": "2026-10-20",
+  "hh": 17
+ },
+ "prep": null
 }

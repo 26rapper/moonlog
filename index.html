@@ -151,6 +151,8 @@ const TEXT = {
   // 캡션 아래 한 줄은 수 없이(디자인 대조 ① — 띠의 준비 무리 칸 수와 어긋나지 않게. 기간은 알림 줄 날짜 범위가 말한다)
   prepGo: '준비 기간 보기', prepNote: '준비 기간 기록은 Past Logs 에', firstStar: d1 => `${d1} 밤에 첫 별`,
   prepTag: (a, b) => `준비 기간 · ${a}–${b}`, prepDay: n => `준비 기간 ${n}일째`,
+  // 모형 교체 알림 한 줄(오너 결정 2026-10-20 — 다시 세지 않고 기록을 잇는다). 정정이 아니다. 날짜는 공개 자료 summary.model_swap
+  swapNote: (d, when) => `${d} ${when}부터 모형이 거래소 공개 자료로 배운 것으로 바뀜. 기록은 이어짐.`,
   prepWhy: (d1, a, b) => `${d1} 밤부터 모형이 쓰는 자료를 공개 자료로 바꿔 60밤을 새로 센다. ${a}~${b}의 기록은 준비 기간으로 남긴다. ` +
                          '준비 기간 값은 바꾸지 않는다.',
 };
@@ -927,7 +929,9 @@ function dictHtml() {
     `${t.alt ? `<small class="alt">${esc(TEXT.dictAlt)} · ${esc(t.alt)}</small>` : ''}</dd>`).join('') + '</dl>';
 }
 function renderFolds() {
-  const why = PREP && PREP.last ? `<p class="prepwhy">${esc(TEXT.prepWhy(md(PREP.day1), md(PREP.from), md(PREP.to)))}</p>` : '';
+  const swap = D.summary && D.summary.model_swap;
+  const why = (swap ? `<p class="prepwhy" id="swapNote">${esc(TEXT.swapNote(md(swap.date), hourWord(swap.hh)))}</p>` : '') +
+    (PREP && PREP.last ? `<p class="prepwhy">${esc(TEXT.prepWhy(md(PREP.day1), md(PREP.from), md(PREP.to)))}</p>` : '');
   let html = fold(TEXT.howTitle, `${why}<p>${esc(TEXT.how)}</p>`, 'how');
   html += fold(TEXT.dictTitle(DICT.length), dictHtml(), 'dict');
   // 정정은 지우지 않고 모아 둔다(정정 규약). 작업 로그(밤 정리 세 줄)는 거래 기록이 아니라 뺐다(글규칙 데이터우선 1절)

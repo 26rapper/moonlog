@@ -109,8 +109,9 @@ const FRAME = Q.get('frame') || '2';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 const pct = (x, d = 1) => (x > 0 ? '+' : x < 0 ? '−' : '+') + Math.abs(x).toFixed(d) + '%';
-const places = x => Math.abs(x) <= FLAT ? 2 : 1;
-const pctOf = x => x == null ? '쉼' : pct(x, places(x));
+/* 하루 % — 사이트와 같은 줄: 공개 JSON 의 둘째 자리 값을 그대로(toFixed(2) 는 끝 0 채움뿐). 한 자리로 다시 줄이면
+   x.x5 에서 원값과 반대로 내려가 쇼츠와 사이트 숫자가 갈린다(기획 결정 (가) 2026-10-24 · 디자인 카드도 둘째 자리) */
+const pctOf = x => x == null ? '쉼' : pct(x, 2);
 const tone = w => w === 'clear' || w === 'clear_star' ? 'up' : w === 'rain' || w === 'storm' ? 'down' : 'flat';
 const md = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${+m[2]}월 ${+m[3]}일` : ''; };
 const dow = s => DAYS[new Date(s + 'T00:00:00Z').getUTCDay()];
@@ -333,7 +334,7 @@ function render(D, row) {
       (c == null ? '' : `<div class="glow" style="background:radial-gradient(circle,${LED_COLOR[t]}40,transparent 70%)"></div>`) +
       `<div class="body"><span class="eb">${esc(date)} ${dow(row.date)}요일 · ${esc(word)}</span>` +
       `<span class="ledbox" role="img" aria-label="${esc(pctOf(c))}">${ledHTML(ledStr(c), lit)}</span>` +
-      (m ? `<span class="money">${esc(usdWord(m.start))}로 시작한 모의 테스트 → 지금 <b>${esc(usdWord(m.now))}</b><br>` +
+      (m ? `<span class="money">${esc(usdWord(m.start))}로 시작한 모의 투자 → 지금 <b>${esc(usdWord(m.now))}</b><br>` +
            `오늘 <b class="${c == null ? '' : t}">${esc(usdSigned(m.today))}</b></span>` : '') + '</div>' +
       `<div class="stars">${stars(lit0, false)}</div>`;
   }

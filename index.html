@@ -44,7 +44,7 @@
     </section>
 
     <section class="sec" id="nightsSec" hidden>
-      <div class="row"><h2>Past Logs</h2><span>누르면 그날 기록</span></div>
+      <div class="row"><h2>Past Logs</h2><div class="pgnav"><span>누르면 그날 기록</span><button class="pg" id="nightsPrev" type="button" aria-label="지난 일곱 밤">‹</button><button class="pg" id="nightsNext" type="button" aria-label="다음 일곱 밤">›</button></div></div>
       <div class="nights" id="nights"></div>
     </section>
 
@@ -107,7 +107,7 @@ const lightOf = w => LIGHT[w] || 1;
 const TEXT = {
   failed: '자료를 못 읽음 · 잠시 뒤 다시 열기',
   // 공개 낱말은 '모의'(오너 · 디자인 모의표현 지시 · 기획 승인 2026-10-20) — 머리 줄은 '최종점검'
-  prestart: '모의 테스트 시작 전', topDay: n => `최종점검 · ${n}일째`, topPre: '최종점검 시작 전',
+  prestart: '모의 투자 시작 전', topDay: n => `최종점검 · ${n}일째`, topPre: '최종점검 시작 전',
   nextAt: '다음 기록 밤 9시 20분',
   worstNone: '시작 아래로 내려간 적 없음',
   waitHead: '다음 기록까지',
@@ -124,7 +124,8 @@ const TEXT = {
   // 60 Nights 아래 한 줄(오너 글규칙 '짧게' — 디자인 다듬기 2026-10-20). 날을 모르면(시즌 전) 날 없이
   finale: (n, when) => `${when ? `${when} 밤 ${n}번째 별` : `${n}번째 별이 뜨는 밤`} · 미리 정한 기준을 넘었는지 발표, 결과는 그대로 공개.`,
   extended: '연장전',
-  weeksTitle: 'Last 7 Nights', kong: '문로그', btcName: '비트코인 그냥 들고 있기', btcNone: '비트코인 시세 못 받음.',
+  // 시작부터(Since Night 1 — 오너 10-24 '처음 시작일부터 지금까지', 디자인 지시 B). 영문 머리는 장식
+  weeksTitle: 'Since Night 1', kong: '문로그', btcName: '비트코인 그냥 들고 있기', btcNone: '비트코인 시세 못 받음.',
   finWeeks: '끝난 주', nightsWord: '밤',
   howTitle: 'How it works',
   ledgerHead: 'LOG · 어젯밤 9시보다',  // 높았을 때 · 낮았을 때가 무엇과 견준 값인지(디자인 대조 2026-10-19 · 영문 제목 A)
@@ -141,9 +142,8 @@ const TEXT = {
   fixWord: '정정',
   counter: '방문 수만 셈(쿠키 없음)',
   veil: d => `${d} 기록 도착`,
-  // 최근 n밤 판정 한 줄(디자인 7밤 지시 — 데이터 우선 꼴). 차이 0.05%p 안은 비슷함. 밤 수는 범위 줄과 같은 last7.nights
-  // (시즌이 7밤보다 짧으면 '최근 5밤은 …' — 기획 2026-10-20)
-  duelNear: n => `최근 ${n}밤은 비슷함.`, duelLead: (who, n) => `최근 ${n}밤은 ${who} 앞섬.`,
+  // 시작부터 판정 한 줄(디자인 지시 B — 데이터 우선 꼴). 차이 0.05%p 안은 비슷함. 밤 수는 범위 줄에만(since_start.nights)
+  sinceNear: '시작부터 비슷함.', sinceLead: who => `시작부터 ${who} 앞섬.`,
   // 60밤 다시 시작(오너 결정 2026-10-20 · 디자인 지시 다시시작) — 준비 기간은 시즌 수에 안 들어간다. 데이터 우선 꼴, 'API' 같은 말 없이
   prepWord: '준비 기간', prepTop: (n, last) => `준비 기간 ${n}일째${last ? ' · 내일부터 1일째' : ''}`,
   prepLastBar: d1 => `준비 기간 마지막 밤 · ${d1} 밤부터 60밤을 새로 센다`,
@@ -161,7 +161,7 @@ const TEXT = {
    `alt`(흔히 부르는 말)만 바깥 말을 쓴다 — words.md 검사의 예외 칸, 작게. `rule` 은 규칙 숫자를 말하는 줄(흐린 꼬리표) —
    숫자는 시험이 사양(live.futures_paper.spec)과 맞춘다. 표제 '60 Nights' 는 소제목과 같은 낱말이다(영문 제목 지시 A) */
 const DICT = [
-  {w: '모의 테스트', d: '진짜 돈 대신 장부 속 숫자로 사고팔아 보는 것이다.', alt: '페이퍼 트레이딩'},
+  {w: '모의 투자', d: '진짜 돈 대신 장부 속 숫자로 사고팔아 보는 것이다.', alt: '페이퍼 트레이딩'},
   {w: '가장 많이 빠졌을 때', d: '제일 높았던 때에서 제일 낮았던 때까지 빠진 만큼이다.', alt: 'MDD · 최대 낙폭'},
   {w: '시작부터', d: '첫날 1만 달러와 견줘서 지금 얼마나 늘었는지 줄었는지를 나타낸다.', alt: '누적 수익률'},
   {w: '오를 쪽 · 내릴 쪽', d: '값이 오르면 버는 자리와, 값이 내리면 버는 자리다.', alt: '롱 · 숏'},
@@ -172,7 +172,7 @@ const DICT = [
   {w: '바로 사고판 주문', d: '지금 있는 값에 바로 사고파는 주문이다. 빠르지만 조금 비싸다.', alt: '시장가 · 테이커'},
   {w: '선물 이자', d: '선물을 들고 있으면 8시간마다 오가는 작은 돈이다. 받을 때도 낼 때도 있다.', alt: '펀딩비'},
   {w: '몇 배로 걸기', d: '가진 돈보다 크게 거는 것이다. 크게 벌 수도, 크게 잃을 수도 있다. ' +
-     '모의 테스트의 규칙상 가진 돈의 1.5배까지만 건다. 빌린 돈이 아니라, 거는 비율의 상한이다.', alt: '레버리지', rule: true},
+     '모의 투자의 규칙상 가진 돈의 1.5배까지만 건다. 빌린 돈이 아니라, 거는 비율의 상한이다.', alt: '레버리지', rule: true},
   {w: '미리 정한 규칙', d: '시험하기 전에 "이렇게 하고, 이러면 기준을 넘은 것"을 먼저 적어 두는 것이다.', alt: '사전등록'},
   {w: '지난 자료로 해 본 시험', d: '이 규칙이 그때 있었으면 어땠을지 옛 자료로 돌려 보는 것이다.', alt: '백테스트'},
   {w: '안 본 구간', d: '규칙을 만들 때 일부러 안 본 기간이다. 거기서도 되면 조금 더 믿는다.', alt: '홀드아웃 · 아웃오브샘플'},
@@ -193,8 +193,9 @@ const DICT = [
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 const pct = (x, d = 1) => x == null ? '—' : (x > 0 ? '+' : x < 0 ? '−' : '+') + Math.abs(x).toFixed(d) + '%';
-const places = x => x != null && Math.abs(x) <= FLAT ? 2 : 1;     // 그대로인 날은 소수 둘째 자리까지
-const pctOf = x => x == null ? '쉼' : pct(x, places(x));
+/* 하루 % — 공개 자료가 원값에서 둘째 자리로 한 번 반올림한 값을 **그대로** 보인다(toFixed(2) 는 끝 0 채움뿐).
+   화면이 한 자리로 다시 줄이면 x.x5 에서 원값과 반대로 내려갔다 — 10-19 원값 +7.3503% 가 +7.3% 로(기획 결정 (가) 2026-10-24) */
+const pctOf = x => x == null ? '쉼' : pct(x, 2);
 const tone = w => w === 'clear' || w === 'clear_star' ? 'up' : w === 'rain' || w === 'storm' ? 'down' : 'flat';
 const md = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${+m[2]}월 ${+m[3]}일` : ''; };
 const dow = s => DAYS[new Date(s + 'T00:00:00Z').getUTCDay()];
@@ -469,7 +470,7 @@ const MONEY_WORDS = {today: ['지금', '오늘'], past: ['그날', '하루']};
 function moneyLine(m, withToday, bold = true, cls = '', w = MONEY_WORDS.today) {
   if (!m) return '';
   const B = (x, c = '') => bold ? `<b${c ? ` class="${c}"` : ''}>${x}</b>` : x;
-  return `${esc(usdWord(m.start))}로 시작한 모의 테스트 → ${w[0]} ${B(esc(usdWord(m.now)))}` +
+  return `${esc(usdWord(m.start))}로 시작한 모의 투자 → ${w[0]} ${B(esc(usdWord(m.now)))}` +
          (withToday ? `<span class="m-sep"> · </span><span class="m-today">${w[1]} ${B(esc(usdSigned(m.today)), cls)}</span>` : '');
 }
 const todayCls = row => row.change_pct == null || tone(row.weather) === 'flat' ? '' : tone(row.weather);
@@ -841,10 +842,20 @@ function renderNights() {
   else n.scrollLeft += sel.getBoundingClientRect().left - n.getBoundingClientRect().left - (n.clientWidth - sel.offsetWidth) / 2;   // 고른 날을 가운데로
   nightsEdge();
 }
-/* 띠가 맨 앞(넘칠 때만)인가 — 준비 무리가 있으면 그때 왼쪽 페이드를 걷는다(CSS .has-prep.at-start) */
+/* 띠의 끝 — 맨 앞이면 ‹, 맨 끝(오늘)이면 › 를 흐리게(컴퓨터 화살표 · 지난 로그 7칸 지시 A). 넘치지 않으면 둘 다 흐리다 */
 function nightsEdge() {
   const n = $('#nights');
-  if (n) n.classList.toggle('at-start', n.scrollLeft <= 1 && n.scrollWidth > n.clientWidth + 1);
+  if (!n) return;
+  const max = n.scrollWidth - n.clientWidth;
+  $('#nightsPrev').disabled = n.scrollLeft <= 1;
+  $('#nightsNext').disabled = n.scrollLeft >= max - 1;
+}
+/* ‹ › — 보이는 칸 수만큼(컴퓨터 7) 넘긴다. 한 번에 넘기는 폭 = 띠 안 너비 + 칸 사이 하나 = 일곱 칸과 그 사이 일곱 */
+function nightsPage(dir) {
+  const n = $('#nights'), cs = getComputedStyle(n);
+  const step = n.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) + parseFloat(cs.columnGap);
+  n.scrollBy({left: dir * step, behavior: reduced() ? 'auto' : 'smooth'});
+  nightsEdge();                       // 바로 넘긴 때(움직임 줄이기)는 scroll 이벤트를 기다리지 않고 끝 흐림을 맞춘다
 }
 /* 캡처만(#to=…) — 그 칸으로 내려가되 붙박이 머리 줄 높이만큼 덜 내려 제목이 머리 줄 밑에 숨지 않게 */
 const capScroll = el => setTimeout(() => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 64), 400);
@@ -879,7 +890,7 @@ function renderFlow() {
   g += `<circle class="ring" cx="${ex}" cy="${ey}" r="6" fill="none" stroke="#f3eee7" stroke-width=".8"></circle>` +
        `<circle class="now" cx="${ex}" cy="${ey}" r="3" fill="#f3eee7"></circle>`;
   svg.innerHTML = g;
-  svg.setAttribute('aria-label', `시작 뒤 ${rows.length}일 동안의 모의 테스트 흐름`);
+  svg.setAttribute('aria-label', `시작 뒤 ${rows.length}일 동안의 모의 투자 흐름`);
   $('#chartMoney').innerHTML = (PREP_MODE ? `<em class="ptag2">${esc(TEXT.prepWord)}</em>` : '') +
                                 esc(`${short(s.start_usd)} → ${short(vals[n])}달러`);
   $('#chartLow').textContent = min < s.start_usd ? `가장 낮을 때 ${short(min)}달러` : TEXT.worstNone;
@@ -892,21 +903,25 @@ function renderFlow() {
 const mdDot = s => { const m = String(s || '').match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? `${+m[1]}.${+m[2]}` : ''; };
 const rangeText = L => `${mdDot(L.from)} ~ ${mdDot(L.to)} · ${L.nights}${TEXT.nightsWord}`;
 function renderDuel() {
-  const el = $('#duel'), wk = (D.weeks && D.weeks.rows) || [], L = D.weeks && D.weeks.last7;
+  const el = $('#duel'), wk = (D.weeks && D.weeks.rows) || [], L = D.weeks && D.weeks.since_start;
   if (!L) { el.hidden = true; return; }
-  // 열기 전(도착)엔 7밤 % · 막대 · 판정 글을 비운다 — 7밤엔 그날 결과가 들어 있다. 끝난 주도 어제까지 끝난 것만 센다
+  // 섹션 꼴은 최근 7밤 그대로, 세는 창만 시작부터(디자인 10-24 — 오너 '내가 시킨 것만'. 숫자 여섯 칸은 뺐다)
+  // 열기 전(도착)엔 % · 막대 · 판정 글을 비운다 — 그날 결과가 들어 있다. 끝난 주도 어제까지 끝난 것만 센다
   // (일요일엔 오늘 끝나는 주가 그날 결과로 갈린다) — 감사 · 기획 2026-10-19 '도착에 그날 수가 한 글자도 없다'
   const veil = STATE === 'arrived', asOf = D.summary.as_of, upTo = veil ? addDays(asOf, -1) : asOf;
   const done = r => addDays(r.week_start, 6) <= upTo;
   const fin = wk.filter(r => done(r) && r.kong_pct != null && r.btc_pct != null);
   const wins = fin.filter(r => r.kong_pct > r.btc_pct).length, loss = fin.filter(r => r.kong_pct < r.btc_pct).length;
-  const bar = p => p == null || veil ? '' : `<i class="${p >= 0 ? 'up' : 'down'}" style="${p >= 0 ? 'left' : 'right'}:50%;width:${Math.min(48, Math.abs(p) * 25).toFixed(1)}%"></i>`;
   const cls = p => p == null || veil ? 'flat' : p > FLAT ? 'up' : p < -FLAT ? 'down' : 'flat';
-  const pctV = p => veil || p == null ? '—' : pct(p);
+  const pctV = p => veil || p == null ? '—' : pct(p, 2);     // 받은 둘째 자리 그대로(다시 반올림하지 않는다 · 기획 결정 (가))
   const m = L.moonlog_pct, b = L.btc_pct;
+  // 막대 눈금 — 두 값 중 |%| 가 큰 쪽이 끝까지(48%), 작은 쪽은 그 비율대로. 둘 다 0 이면 막대 없음
+  // (디자인 10-24 — 시작부터 값은 60밤 동안 커지니 고정 눈금이면 두 막대가 같이 끝까지 차서 못 견준다)
+  const top = Math.max(0, ...[m, b].filter(p => p != null).map(Math.abs));
+  const bar = p => p == null || veil || !top ? '' : `<i class="${p >= 0 ? 'up' : 'down'}" style="${p >= 0 ? 'left' : 'right'}:50%;width:${(48 * Math.abs(p) / top).toFixed(1)}%"></i>`;
   // 비트코인 값이 없을 때만 '시세 못 받음'(문로그 값이 빈 것을 비트코인 탓으로 말하지 않게)
-  let say = b == null ? TEXT.btcNone : m == null ? '' : Math.abs(m - b) < 0.05 ? TEXT.duelNear(L.nights)
-    : TEXT.duelLead(m > b ? TEXT.kong : TEXT.btcName, L.nights);
+  let say = b == null ? TEXT.btcNone : m == null ? '' : Math.abs(m - b) < 0.05 ? TEXT.sinceNear
+    : TEXT.sinceLead(m > b ? TEXT.kong : TEXT.btcName);
   if (veil) say = '';
   const ptag = PREP_MODE ? `<em class="ptag2">${esc(TEXT.prepWord)}</em>` : '';
   el.innerHTML = `<div class="row"><h2>${esc(TEXT.weeksTitle)}</h2><span>${ptag}${fin.length ? `${esc(TEXT.finWeeks)} ${wins}승 ${loss}패` : ''}</span></div>` +
@@ -1100,6 +1115,9 @@ window.addEventListener('hashchange', () => {        // 주소 꼬리를 손으�
   if (row) showPast(row); else toToday();
 });
 $('#nights').addEventListener('scroll', nightsEdge, {passive: true});
+$('#nightsPrev').addEventListener('click', () => nightsPage(-1));
+$('#nightsNext').addEventListener('click', () => nightsPage(1));
+window.addEventListener('resize', nightsEdge);
 $('#constel').addEventListener('click', showStar);
 $('#constel').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute('data-star')) { e.preventDefault(); showStar(e); } });
 document.addEventListener('visibilitychange', () => {

@@ -1,0 +1,22 @@
+{
+  "groo": 1,
+  "no": "001",
+  "name": "Moonlog",
+  "name_ko": "문로그",
+  "kind": "log",
+  "status": "ACTIVE",
+  "line": "밤마다 업데이트되는 모의 투자 기록",
+  "url": "https://26rapper.github.io/moonlog/",
+  "started": "2026-10-15",
+  "icon": { "src": "https://26rapper.github.io/moonlog/assets/face/deadpan.webp", "frame": { "position": "50% 40%", "zoom": 1.4 } },
+  "accent": "#15120f",
+  "public_json": "https://26rapper.github.io/moonlog/public/summary.json",
+  "figure": { "kind": "pct", "pct": "total_pct", "day": "day", "total": "days_total", "as_of": "as_of", "digits": 2 },
+  "attribution": { "json": "https://26rapper.github.io/moonlog/public/site.json", "field": "attribution" },
+  "license": { "json": "https://26rapper.github.io/moonlog/public/site.json", "field": "license" },
+  "source_short": "시장 자료: Binance",
+  "money": true,
+  "money_kind": "invest",
+  "notice": "모의 투자 · 실제 투자 아님 · 종목 추천 없음",
+  "update_note": "밤 9시 20분 갱신"
+}

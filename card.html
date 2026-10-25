@@ -66,6 +66,27 @@ body { color: var(--ink); font-family: var(--f-ui); -webkit-font-smoothing: anti
 /* 가림 구역에 조금 걸리는 날 — 바로 멈추지 않고 한 번 줄여 다시 잰다(디자인 2026-10-15: 하루도 빠지지 않게) */
 .card.tight .next { font-size: 16px; }
 .card.tight .fix-say { margin-top: 3px; }
+/* ③ 판정(디자인 쇼츠 판정 카드 지시 3절 · 시안 판정카드) — 판정 낱말이 처음 실린 밤 · 판정 정정이 나온 밤만. 창 = 닫힌 초승달
+   별자리(사이트 60 Nights 와 같은 별 · 날씨대로), 몸 = LED 낱말(② 와 같은 66px · 부호 칸 없는 넉 칸) + 이름 · 기준 셋 · 맨 아래
+   한 줄. 아래 장식은 비운다(달이 창으로 올라왔다) */
+.card .win.vwin { background: radial-gradient(ellipse 70% 80% at 50% 50%, #1d150e, #0a0807 75%); }
+.card .vt { position: absolute; left: 14px; top: 12px; display: flex; flex-direction: column; gap: 3px; }
+.card .vt b { font: 400 19px/1 "Instrument Serif", serif; color: var(--ink); }
+.card .vt span { font-size: 10px; color: var(--muted); letter-spacing: .02em; }
+.card .vrow { display: flex; align-items: flex-end; gap: 12px; }
+.card .vrow .ledbox { margin-top: 0; }
+.card .vname { font-family: var(--f-voice); font-weight: 700; font-size: 18px; line-height: 1; padding-bottom: 2px; }
+/* 기준 셋 — 장부 꼴(11px · 이름 ink-2 · 숫자 ink · 끝 칸 결과). 점선 위 */
+.card .vg { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 8px; row-gap: 1px; align-items: baseline;
+            margin-top: 6px; padding-top: 5px; border-top: 1px dashed rgba(243,238,231,.22); font-size: 11px; line-height: 1.45; }
+.card .vg .gi { color: var(--muted); }
+.card .vg .gt { color: var(--ink-2); white-space: nowrap; }
+.card .vg .gt b { color: var(--ink); font-weight: 600; }
+.card .vg .gm { font-weight: 600; color: var(--ink); text-align: right; white-space: nowrap; }
+.card .vg .gm.no { color: var(--down); } .card .vg .gm.hold { color: var(--ink-2); }
+.card .vlaw { font-family: var(--f-voice); font-size: 13px; line-height: 1.35; margin-top: 5px; color: var(--ink); }
+/* 판정 ③ 이 가림 구역에 걸리면 — 기준 셋 위 여백(6 · 5px)부터 조인다(판정 카드 지시 3절 실측) */
+.card.tight .vg { margin-top: 3px; padding-top: 3px; } .card.tight .vlaw { margin-top: 3px; }
 .card .stars { position: absolute; left: 0; right: 0; bottom: 0; height: 150px; }
 .card .stars svg { width: 100%; height: 100%; display: block; }
 .card .safe { position: absolute; inset: 0; pointer-events: none; }
@@ -85,6 +106,7 @@ body { color: var(--ink); font-family: var(--f-ui); -webkit-font-smoothing: anti
    글이 걸린 날·LED 칸 수가 글자 수와 다른 날은 찍지 않는다. ?frame=script 는 원고.txt 의 글을 #script 에 쓴다(같은 값으로). */
 const FLAT = 0.10, BIG = 1.00;
 const SEASON_DAYS = 60;
+const SEASON_MAX = 90;               // 연장 끝(사전등록 5-1 — 300건 미만이면 300건까지, 길어도 90밤) · 보류 날짜 줄 '90일 중'
 const WEATHER_WORD = {clear_star: '별똥별', clear: '맑음', cloudy: '구름', rain: '비', storm: '폭우', closed: '쉼'};
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const LAW = '모의 투자 · 실제 투자 아님 · 종목 추천 없음';
@@ -126,7 +148,9 @@ const LED_REST = 'rgba(243,238,231,.55)';                             // 쉰 날
 const LED_EIGHT = 'rgba(243,238,231,.32)';                            // 열 때 0.9초 — 그날 칸에 8 을 흐린 크림으로
 const LED_DARK = '+88.8%';            // 꺼진 판은 늘 이 꼴 — 칸 수로 결과(두 자리인지 · 소수 둘째인지)가 새지 않게
 const SEG = {'0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc',
-             '8': 'abcdefg', '9': 'abfgcd', '-': 'g', ' ': '', 'o': 'cdeg', 'F': 'aefg'};
+             '8': 'abcdefg', '9': 'abfgcd', '-': 'g', ' ': '', 'o': 'cdeg', 'F': 'aefg',
+             // 판정 낱말 PASS · FAIL · HoLd(디자인 판정 지시 2-2) — 'oFF' 와 같은 결의 영문 장식
+             'P': 'abefg', 'A': 'abcefg', 'S': 'afgcd', 'I': 'ef', 'L': 'def', 'H': 'bcefg', 'd': 'bcdeg'};
 const SEGP = {a: 'M12 4 L48 4 L42 10 L18 10 Z', b: 'M50 6 L50 46 L44 42 L44 12 Z', c: 'M50 54 L50 94 L44 88 L44 58 Z',
               d: 'M12 96 L48 96 L42 90 L18 90 Z', e: 'M10 54 L10 94 L16 88 L16 58 Z', f: 'M10 6 L10 46 L16 42 L16 12 Z',
               g: 'M14 50 L20 45 L40 45 L46 50 L40 55 L20 55 Z'};
@@ -160,17 +184,79 @@ const ledStr = c => c == null ? 'oFF' : pctOf(c);                    // 쉰 날�
 
 /* 정정 — 사이트와 같은 글(디자인 정정줄 1판). 카드 ③ 맨 아래에 그 밤 나온 것만 */
 const fixesOf = D => (D && D.diary && D.diary.corrections) || [];
+// 판정 정정(kind verdict · 기획 10-24 · 52 자료 꼴) — 같은 밤의 판정 낱말이 바뀐 밤에만. 전 · 새 낱말은 verdict_before ·
+// verdict_after(pass · fail · hold · 드물게 extended, 새 쪽은 셈 중으로 돌아가면 null), 수 칸은 null. 까닭은 고정 문장 둘.
+// 문장 안 날짜는 판정 밤(date), 줄이 붙는 밤 · 순서는 정정이 나온 밤(as_of) — 기획 ⓑ 10-24
+// words-allow verdict — 60밤 판정 이름(통과 · 미달 · 보류)은 이 자리 안에서만(words.md 37행 예외 · 기획 10-24)
+const FIX_VERDICT = {pass: '통과', fail: '미달', hold: '보류', extended: '연장'};
+// words-allow end
 const fixText = f => f.kind === 'btc_week' ? `${md(f.date)} 주 비트코인 ${pct(f.before, 2)} → ${pct(f.after, 2)}`   // 주간 비트코인 정정(두 자리)
+  : f.kind === 'verdict' ? `${md(f.date)} 판정 ${FIX_VERDICT[f.verdict_before] || '셈 중'} → ${FIX_VERDICT[f.verdict_after] || '셈 중'}`
   : `${md(f.date)} ${pctOf(f.before)} → ${pctOf(f.after)}`;
 const fixMore = n => `외 ${n}건 — 사이트 일지에`;
+// 늦은 미달(uncounted_nights n > 0, 지시 3-3) — 까닭 뒤에 '그 사이 공개된 n밤 줄은 남기되 셈에서 뺐다'
+const fixWhy = f => f.why + (f.uncounted_nights > 0 ? ` · 그 사이 공개된 ${f.uncounted_nights}밤 줄은 남기되 셈에서 뺐다` : '');
 const FIX_SAY = '어제 숫자 정정.';
 const FIX_SAY_WEEK = '비트코인 주간 숫자 정정.';   // 그 밤 정정이 주간 비트코인뿐일 때(어제 숫자가 아니라서)
+
+/* ── 판정 카드(디자인 쇼츠 판정 카드 지시) — 공개 자료의 판정 칸(scene.season_verdict · season_gates · season_next ·
+   weeks.at_verdict · at_verdict_2)을 읽기만 한다. 이름 · LED 낱말 · 한 줄 · 맨 아래 줄은 사이트 Verdict 와 같은 글(시험이 견준다),
+   기준 셋은 카드 몸 폭(294px · 아래 끝 490)에 맞춘 짧은 글 — 온전한 문구는 사이트가 갖는다. 수(40 · 95 · 30)는 시험이 사양과 맞춘다 */
+// words-allow verdict — 60밤 판정 이름(통과 · 미달 · 보류)은 이 자리 안에서만(words.md 37행 예외 · 기획 10-24)
+const VTEXT = {
+  vName: {pass: '통과', fail: '미달', hold: '보류'},
+  vLed: {pass: 'PASS', fail: 'FAIL', hold: 'HoLd'},
+  vSay: {pass: () => '미리 적은 기준 셋을 모두 넘었다.', fail: list => `기준 ${list} 넘지 못했다.`,
+         hold: d => `기준 ①의 평균 손익이 0 아래지만 크게 모자란 폭은 아님. 30밤 더 센 뒤 ${d}에 다시 판정.`},
+  vLaw: {pass: '통과해도 실제 투자로 이어지지 않는다.', fail: '미달이면 이 모형은 고치지 않고 끝낸다.',
+         hold: '다시 판정할 때까지 기록은 이어진다.'},
+  vMark: {pass: '넘음', fail: '못 넘음', hold: '보류'},
+  gate: ['거래당 평균 손익 · 지난 시험 값 대비', '가장 많이 빠졌을 때', '정한 대로 주문한 비율 · 95% 이상'], gate2Tail: '40% 안',
+  bottom: {pass: () => '통과해도 실제 투자로 이어지지 않는다.', fail: () => '미달이면 이 모형은 고치지 않고 끝낸다.',
+           hold: d => `30밤 더 센 뒤 ${d}에 다시 판정.`},                     // 카드 ③ 맨 아래 — 보류만 다시 판정 날(지시 3절 표)
+  word: (n, again) => again ? '다시 판정' : `${n}밤 판정`,                     // 머리 · ① 가림말 둘째 줄 · 자막의 앞
+  after: '60 Nights · 판정 통과',                                             // 통과 뒤 ③ — 별 수 대신(별은 60개에서 닫혔다, 지시 5절)
+  since: (m, b) => `시작부터 ${m} · 비트코인 그냥 들고 있기 ${b}(판정 기준 아님).`,
+};
+// words-allow end
+const V_COLOR = {pass: LED_COLOR.up, fail: LED_COLOR.down, hold: LED_COLOR.flat};
+const V_NO = ['①', '②', '③'], V_JOSA = ['을', '를', '을'];
+function failList(g) {               // 못 넘은 것만 ①·② 로 잇고 조사는 끝 번호를 따른다
+  const k = ['c', 'b', 'd'].map((x, i) => g[x] === 'fail' ? i : -1).filter(i => i >= 0);
+  return k.length ? k.map(i => V_NO[i]).join('·') + V_JOSA[k[k.length - 1]] : '';
+}
+/* 판정 갈래 — 사이트 seasonVerdict 와 같은 칸 읽기. 300건 연장(기준 낱말 없는 extended)은 null(③ 그대로, 지시 6절).
+   다시 판정(보류 뒤)은 at_verdict_2 가 있고 낱말이 통과 · 미달일 때 — 숫자는 at_verdict_2 */
+let V = null;
+function verdictOf(D) {
+  const sc = D.scene || {}, w = sc.season_verdict, g = sc.season_gates, wk = D.weeks || {}, at = wk.at_verdict;
+  if (!w || !g || !at || !at.to || (w === 'extended' && g.c !== 'hold')) return null;
+  const again = !!(wk.at_verdict_2 && wk.at_verdict_2.to && (w === 'pass' || w === 'fail')), a = again ? wk.at_verdict_2 : at;
+  return {kind: w === 'extended' ? 'hold' : w, gates: g, next: sc.season_next || null, at: a, again, nights: a.nights || SEASON_DAYS};
+}
+/* ③ 이 판정 카드인 밤 — 판정 낱말이 처음 실린 밤(판정 밤) · 판정 정정이 나온 밤(바뀐 낱말로 한 번 더, 지시 6절) */
+const vNight = row => !!V && row.date === V.at.to;
+const vCard = (D, row) => vNight(row) || (!!V && fixesOf(D).some(f => f.kind === 'verdict' && f.as_of === row.date));
+/* 날 수 — 판정 밤엔 판정 앞의 꼴(① ② 에서 결과가 날 수로 새지 않게 · 사이트 dayWord 와 같은 규칙). 통과 뒤 '61일째'('/ 60'
+   없음) · 보류 뒤와 다시 판정 밤 '/ 90'(지시 5절). 판정이 없으면 지금 꼴 그대로 */
+const dayKind = row => !V ? null : row.date > V.at.to ? V.kind : V.again ? 'hold' : null;
+function dayLabel(row, total, clamp) {          // 머리(clamp — 60 에 멈추는 지금 꼴) · 캡션 첫 줄
+  const k = dayKind(row), over = row.day > SEASON_DAYS;
+  if (k === 'pass' && over) return `${row.day}일째`;
+  if (over && (k === 'hold' || (V && V.again))) return `${row.day}일째 / ${SEASON_MAX}`;
+  return `${clamp ? Math.min(row.day, total) : row.day}일째 / ${total}`;
+}
+function dayWordOf(row, total) {                // ① 날짜 줄
+  const k = dayKind(row), over = row.day > SEASON_DAYS;
+  if (k === 'pass' && over) return `${row.day}일째`;
+  return `${over && (k === 'hold' || (V && V.again)) ? SEASON_MAX : total}일 중 ${row.day}일째`;
+}
 
 /* 그날 거래 줄(정리 · 이긴 것) — 원고 캡션 둘째 줄 */
 /* 60밤 다시 시작(오너 결정 2026-10-20 · 디자인 지시 다시시작 6절) — 준비 기간 줄(prep · phase 'prep')은 시즌 수 밖. 그날이
    준비 기간이면 prep 목록에서 찾는다(사이트와 같은 규칙). PREP = {from, to, nights, day1} */
 const isPrep = row => !!row && row.phase === 'prep';
-const rowsOf = (D, name, prep) => (D && D[name] && (prep ? D[name].prep : D[name].rows)) || [];
+const rowsOf = (D, name, prep) => (D && D[name] && (prep === 'unc' ? D[name].uncounted : prep ? D[name].prep : D[name].rows)) || [];
 let PREP = null;
 const prepDay = d => PREP ? Math.round((Date.parse(d + 'T00:00:00Z') - Date.parse(PREP.from + 'T00:00:00Z')) / 864e5) + 1 : 0;
 const PREP_DAY = n => `준비 기간 ${n}일째`;
@@ -282,14 +368,43 @@ function stars(lit, highlight) {
   if (highlight && lit) s += `<circle class="today" cx="${f(P[lit - 1].x)}" cy="${f(P[lit - 1].y)}" r="11" fill="none" stroke="#fff3dc" stroke-opacity=".5"></circle>`;
   return s + '</svg>';
 }
+/* 뜬 별 — 날씨대로(초승달 지시 B 표 · 사이트와 같은 줄) */
+const STAR = {clear_star: {r: 2.5, c: '#fff6e6', glow: 13, spark: 1}, clear: {r: 2.1, c: '#fff3dc', glow: 8}, cloudy: {r: 1.6, c: '#9c948b'},
+              rain: {r: 1.7, c: '#e9a77a', op: 0.9}, storm: {r: 1.4, c: '#e9a77a', op: 0.65}, closed: {ring: 1, r: 2}};
+const starOf = w => STAR[w] || STAR.closed;
+const dotDate = s => { const m = String(s || '').match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? `${+m[1]}.${m[2]}` : ''; };   // 10.28 · 11.01
+/* ③ 판정 창 — 닫힌 초승달 별자리(지시 3절): 판정 밤까지의 별(다시 판정이면 연장 별 30 까지) · 그림자 .11/.035 · 테두리 .16 ·
+   마지막 별에 고리 하나(정지 화면이라 퍼짐 없음). 별자리를 오른쪽으로 — viewBox 를 왼쪽으로 늘려 '60 Nights' 글 자리를 비운다 */
+function moonWin(D, a) {
+  const P = MOON.pts, xy = i => [P[i].x.toFixed(1), P[i].y.toFixed(1)];
+  const rows = ((D.scene && D.scene.rows) || []).filter(r => r.date <= a.to).slice(0, MOON.MAX), n = rows.length;
+  let s = '<svg viewBox="-70 -6 428 248" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><defs>' +
+    '<radialGradient id="vsg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff3dc" stop-opacity=".55"></stop><stop offset="1" stop-color="#fff3dc" stop-opacity="0"></stop></radialGradient>' +
+    '<radialGradient id="vhl" cx=".46" cy=".5" r=".5"><stop offset="0" stop-color="#f6ecd4" stop-opacity=".09"></stop><stop offset="1" stop-color="#f6ecd4" stop-opacity="0"></stop></radialGradient>' +
+    '<linearGradient id="vmf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6ecd4" stop-opacity=".11"></stop><stop offset="1" stop-color="#f6ecd4" stop-opacity=".035"></stop></linearGradient></defs>' +
+    `<circle cx="${MOON.C.x}" cy="${MOON.C.y}" r="150" fill="url(#vhl)"></circle>` +
+    `<path class="shade shut" d="${MOON.shape}" fill="url(#vmf)" stroke="#f3eee7" stroke-opacity=".16" stroke-width=".6"></path>`;
+  let d = '';
+  for (let i = 0; i < Math.min(n, MOON.N); i++) d += (i ? 'L' : 'M') + xy(i).join(' ');
+  if (Math.min(n, MOON.N) > 1) s += `<path d="${d}" fill="none" stroke="#f3eee7" stroke-opacity=".2" stroke-width=".6" stroke-linejoin="round"></path>`;
+  rows.forEach((r, i) => {
+    const [x, y] = xy(i), st = starOf(r.weather), rr = (st.r * (P[i].ext ? 0.6 : 1)).toFixed(2);   // 연장 별은 작게
+    if (st.glow && !P[i].ext) s += `<circle cx="${x}" cy="${y}" r="${st.glow}" fill="url(#vsg)"></circle>`;
+    if (st.spark && !P[i].ext) s += `<path d="M${x} ${(+y - 9).toFixed(1)}V${(+y + 9).toFixed(1)}M${(+x - 9).toFixed(1)} ${y}H${(+x + 9).toFixed(1)}" stroke="#fff6e6" stroke-opacity=".55" stroke-width=".6"></path>`;
+    s += st.ring ? `<circle class="vstar" cx="${x}" cy="${y}" r="${rr}" fill="none" stroke="#8b8279" stroke-width=".9"></circle>`
+                 : `<circle class="vstar" cx="${x}" cy="${y}" r="${rr}" fill="${st.c}"${st.op ? ` opacity="${st.op}"` : ''}></circle>`;
+    if (i === n - 1) s += `<circle class="vring" cx="${x}" cy="${y}" r="7" fill="none" stroke="#fff3dc" stroke-opacity=".5" stroke-width=".8"></circle>`;
+  });
+  return s + '</svg>';
+}
 /* 창 — face = 얼굴 이름, look = 'fogged'(① 기록) · ''. ② ③ 의 사진에는 그날 빛(LIGHT, 3판-b)만 건다 */
 function win(kind, face, look, veil) {
   const lit = look !== 'fogged' && LIGHT[kind] ? ` style="filter: brightness(${LIGHT[kind]})"` : '';
   return `<div class="win"><img id="photo" src="${FACE_SRC(face)}" alt=""${look ? ` class="${look}"` : ''}${lit} data-face="${face}">` +
          weather(kind, look === 'fogged') + (veil ? `<div class="veil">${veil}</div>` : '') + '</div>';
 }
-function head(day, total, label) {
-  return `<div class="hd"><b><span class="wm-en">${esc(BRAND.en)}</span><span class="wm-ko">${esc(BRAND.ko)}</span></b><span>${esc(label || `${Math.min(day, total)}일째 / ${total}`)}</span></div><div class="law">${esc(LAW)}</div>`;
+function head(label) {                // 머리 오른쪽 — 날 수(dayLabel) · 준비 기간 n일째 · 판정 ③ 은 '60밤 판정 · 날'
+  return `<div class="hd"><b><span class="wm-en">${esc(BRAND.en)}</span><span class="wm-ko">${esc(BRAND.ko)}</span></b><span>${esc(label)}</span></div><div class="law">${esc(LAW)}</div>`;
 }
 const safeHtml = () => '<div class="safe"' + (Q.get('debug') === 'safe' ? '' : ' hidden') + '>' +
   SAFE.map(z => `<i style="left:${z.x0}px;width:${z.x1 - z.x0}px;top:${z.y0}px;height:${z.y1 - z.y0}px"></i>`).join('') + '</div>';
@@ -299,7 +414,7 @@ function fixCard(D, row) {
   if (!list.length) return '';
   // 카드는 자리가 좁다 — 자세히는 첫 정정 한 줄, 더 있으면 '외 n건 — 사이트 일지에'(사이트 ③ 은 둘까지)
   return `<span class="fix-say">${esc(list.every(f => f.kind === 'btc_week') ? FIX_SAY_WEEK : FIX_SAY)}</span>` +
-    `<span class="fix">${esc(fixText(list[0]))} · ${esc(list[0].why)}</span>` +
+    `<span class="fix">${esc(fixText(list[0]))} · ${esc(fixWhy(list[0]))}</span>` +
     (list.length > 1 ? `<span class="fix">${esc(fixMore(list.length - 1))}</span>` : '');
 }
 /* 그날 켜는 LED 글 — ① 은 늘 꺼진 판 */
@@ -308,26 +423,44 @@ function render(D, row) {
   const total = (D.summary && D.summary.days_total) || SEASON_DAYS, p = isPrep(row), m = moneyOf(D, row.date, p), c = row.change_pct;
   const date = md(row.date), word = WEATHER_WORD[row.weather] || '', face = faceOf(row.weather);
   // 준비 기간 날(준비 기간 마지막 밤) — 머리 '준비 기간 n일째', 날짜 줄도 같은 말, 별은 아직 0개(시즌 수 밖)
-  const dayWord = p ? PREP_DAY(prepDay(row.date)) : `${total}일 중 ${row.day}일째`, lit0 = p ? 0 : row.day;
+  const dayWord = p ? PREP_DAY(prepDay(row.date)) : dayWordOf(row, total), lit0 = p ? 0 : row.day;
   const t = tone(row.weather), lit = c == null ? LED_REST : LED_COLOR[t];
-  const sky = SKY_TINT[FRAME === '1' ? 'clear' : row.weather] || SKY_TINT.clear;
+  const vc = FRAME === '3' && !p && vCard(D, row), passAfter = !p && dayKind(row) === 'pass' && row.day > SEASON_DAYS;
+  const sky = SKY_TINT[FRAME === '1' || vc ? 'clear' : row.weather] || SKY_TINT.clear;
   $('#card').style.setProperty('--sky-a', sky[0]);
   $('#card').style.setProperty('--sky-b', sky[1]);
-  let h = head(row.day, total, p ? PREP_DAY(prepDay(row.date)) : '');
+  let h = head(p ? PREP_DAY(prepDay(row.date)) : vc ? `${VTEXT.word(V.nights, V.again)} · ${md(V.at.to)}` : dayLabel(row, total, true));
   if (FRAME === '1') {
-    // ① 가림말은 그날 날짜 + '기록'(글규칙 데이터우선 2절). 아래는 날짜 줄과 꺼진 LED 만 — 말 거는 줄은 뺐다(디자인 대조)
-    h += win(row.weather, 'deadpan', 'fogged', `${esc(date)} 기록`) +
+    // ① 가림말은 그날 날짜 + '기록'(글규칙 데이터우선 2절). 아래는 날짜 줄과 꺼진 LED 만 — 말 거는 줄은 뺐다(디자인 대조).
+    // 판정 밤엔 둘째 줄 '60밤 판정'(다시 판정이면 '다시 판정') — 결과 낱말은 쓰지 않는다(판정 카드 지시 1절)
+    h += win(row.weather, 'deadpan', 'fogged', `${esc(date)} 기록` + (vNight(row) ? `<br>${esc(VTEXT.word(V.nights, V.again))}` : '')) +
       `<div class="body"><span class="eb">${esc(date)} ${dow(row.date)}요일 · ${esc(dayWord)}</span>` +
       `<span class="ledbox">${ledHTML(LED_DARK, null)}</span></div>` +
-      `<div class="stars">${stars(Math.max(lit0 - 1, 0), false)}</div>`;
+      `<div class="stars">${stars(passAfter ? SEASON_DAYS : Math.max(lit0 - 1, 0), false)}</div>`;   // 통과 뒤 별은 60 에서 닫힌다
+  } else if (vc) {
+    // ③ 판정(지시 3절) — 창 = 닫힌 초승달 별자리 + 왼쪽 위 '60 Nights · 날짜', 몸 = LED 낱말 + 이름 · 기준 셋 · 맨 아래 한 줄.
+    // 아래 장식은 비운다. 그 밤 정정 두 줄은 그리지 않는다(정정은 캡션 줄로만)
+    const k = V.kind, a = V.at, g = V.gates, vcol = V_COLOR[k];
+    const mark = s => `<span class="gm${s === 'fail' ? ' no' : s === 'hold' ? ' hold' : ''}">${esc(VTEXT.vMark[s] || '—')}</span>`;
+    const mdd = a.judge_mdd_pct != null ? ` <b>${esc(pctOf(a.judge_mdd_pct))}</b>` : '';      // 판정 낙폭(b) — 없으면 숫자 없이(기획 ⓐ)
+    h += `<div class="win vwin">${moonWin(D, a)}<div class="vt"><b>60 Nights</b><span>${esc(dotDate(a.from))} – ${esc(dotDate(a.to))}</span></div></div>` +
+      `<div class="glow" style="background:radial-gradient(circle,${vcol}40,transparent 70%)"></div>` +
+      `<div class="body" data-words-allow="verdict"><div class="vrow"><span class="ledbox" role="img" aria-label="${esc(VTEXT.vName[k])}">${ledHTML(VTEXT.vLed[k], vcol, {sign: false})}</span>` +
+      `<span class="vname">${esc(VTEXT.vName[k])}</span></div>` +
+      `<div class="vg"><span class="gi">${V_NO[0]}</span><span class="gt">${esc(VTEXT.gate[0])}</span>${mark(g.c)}` +
+      `<span class="gi">${V_NO[1]}</span><span class="gt">${esc(VTEXT.gate[1])}${mdd} · ${esc(VTEXT.gate2Tail)}</span>${mark(g.b)}` +
+      `<span class="gi">${V_NO[2]}</span><span class="gt">${esc(VTEXT.gate[2])}</span>${mark(g.d)}</div>` +
+      `<span class="vlaw">${esc(VTEXT.bottom[k](md(V.next)))}</span></div>`;
   } else if (FRAME === '3') {
-    // ③ 60 Nights · 별 n개 / 다음 기록 내일 밤 9시 20분(글규칙 데이터우선 2절 · 영문 제목 A). 위 작은 줄은 날짜 — 별 수를 두 번 쓰지 않게
+    // ③ 60 Nights · 별 n개 / 다음 기록 내일 밤 9시 20분(글규칙 데이터우선 2절 · 영문 제목 A). 위 작은 줄은 날짜 — 별 수를 두 번 쓰지 않게.
+    // 통과 뒤는 VTEXT.after 한 줄(별은 60개에서 닫혔다 · 오늘 고리 없음) · 보류 뒤는 '/ 90' 까지 연장 별(판정 카드 지시 5절)
+    const cap = dayKind(row) === 'hold' && row.day > SEASON_DAYS ? SEASON_MAX : total;
     h += win(row.weather, face, '') +
       `<div class="body"><span class="eb">${esc(date)} ${dow(row.date)}요일</span>` +
-      `<span class="next n1">${p && PREP.last ? esc(`60 Nights · ${md(PREP.day1)} 밤에 첫 별`) : `60 Nights · 별 ${p ? 0 : Math.min(row.day, total)}개`}</span>` +
+      `<span class="next n1">${p && PREP.last ? esc(`60 Nights · ${md(PREP.day1)} 밤에 첫 별`) : passAfter ? `<span data-words-allow="verdict">${esc(VTEXT.after)}</span>` : `60 Nights · 별 ${p ? 0 : Math.min(row.day, cap)}개`}</span>` +
       '<span class="next n2">다음 기록 <br>내일 밤 9시 20분</span>' +
       '<span class="money cta">미리 찍기 · 프로필 링크</span>' + fixCard(D, row) + '</div>' +
-      `<div class="stars">${stars(lit0, !p)}</div>`;
+      `<div class="stars">${passAfter ? stars(SEASON_DAYS, false) : stars(lit0, !p)}</div>`;
   } else {
     // ② 결과 — LED + 금액 줄만(생성 글 자막은 지웠다, 글규칙 데이터우선 1절)
     h += win(row.weather, face, '') +
@@ -336,52 +469,99 @@ function render(D, row) {
       `<span class="ledbox" role="img" aria-label="${esc(pctOf(c))}">${ledHTML(ledStr(c), lit)}</span>` +
       (m ? `<span class="money">${esc(usdWord(m.start))}로 시작한 모의 투자 → 지금 <b>${esc(usdWord(m.now))}</b><br>` +
            `오늘 <b class="${c == null ? '' : t}">${esc(usdSigned(m.today))}</b></span>` : '') + '</div>' +
-      `<div class="stars">${stars(lit0, false)}</div>`;
+      `<div class="stars">${passAfter ? stars(SEASON_DAYS, false) : stars(lit0, false)}</div>`;
   }
   $('#card').innerHTML = h + safeHtml();
-  $('#card').classList.toggle('has-fix', FRAME === '3' && fixesOf(D).some(f => f.as_of === row.date));
+  $('#card').classList.toggle('has-fix', FRAME === '3' && !vc && fixesOf(D).some(f => f.as_of === row.date));
 }
 
 /* 원고.txt — 고정 꼴(디자인 글규칙 데이터우선 3절), 카드와 같은 값으로. 쉰 날은 ② '쉼 · 거래 없음'(정리가 있었으면
-   '쉼 · 정리 n건') · 캡션 둘째 줄 '자료 못 받음.' */
-function script(D, row) {
+   '쉼 · 정리 n건') · 캡션 둘째 줄 '자료 못 받음.'
+   판정 이름이 든 줄({z: 글})은 #script 에 예외 자리(data-words-allow)로 묶어 쓴다 — 원고 글자는 같다(words.md 37행 예외) */
+const Zl = s => ({z: s});
+const script = (D, row) => scriptLines(D, row).map(x => x.z ?? x).join('\n');
+const scriptHtml = (D, row) => scriptLines(D, row).map(x => x.z != null ? `<span data-words-allow="verdict">${esc(x.z)}</span>` : esc(x)).join('\n');
+/* 늦은 미달 밤(P · 쇼츠 판정 카드 지시 6절) — 수치 as_of 는 판정 밤 N 에 서고 공개는 P(diary.as_of)에 나온다. 그 밤 묶음은
+   ③ 판정 카드(미달) + 원고만이다(①② 는 찍지 않는다 — 그 밤 값은 셈에 안 들어간다). 묶음 가르기는 찍는 쪽
+   (site_cards.late_fail_tonight)이 정한다 — 카드는 마지막 판에서 그 밤 판정 정정을 찾아 원고를 그 꼴로 쓴다 */
+function lateFix(D, row) {           // 찍는 쪽 public_export.late_fail_tonight 와 같은 규칙(52 2ff06f6) — 셈 밖 밤이 0 이어도(판정 다음 밤 미달)
+  const rows = (D.scene && D.scene.rows) || [], p = D.diary && D.diary.as_of;
+  if (!V || V.kind !== 'fail' || !rows.length || row !== rows[rows.length - 1] || !p || p <= row.date) return null;
+  return fixesOf(D).slice().reverse().find(f => f.kind === 'verdict' && f.as_of === p && f.verdict_after === 'fail') || null;
+}
+function lateLines(D, row, f) {     // 시안 판정카드 lateScript 꼴 — 판정 줄 · 시작부터 줄 · 맨 아래 줄 · 법 줄 · 정정 줄 · 해시태그
+  const k = V.kind, vw = VTEXT.word(V.nights, V.again), p2 = x => x == null ? '—' : pct(x, 2);
+  const say = k === 'fail' ? VTEXT.vSay.fail(failList(V.gates)) : k === 'hold' ? VTEXT.vSay.hold(md(V.next)) : VTEXT.vSay.pass();
+  return [
+    `[${BRAND.en} · ${md(f.as_of)}] 판정 정정`,
+    Zl(`③ 자막: "${vw} · ${VTEXT.vName[k]}"`),
+    '',
+    '캡션:',
+    Zl(`${vw} · ${VTEXT.vName[k]}. ${say}`),
+    VTEXT.since(p2(V.at.moonlog_pct), p2(V.at.btc_pct)),
+    ...(k === 'hold' ? [] : [Zl(VTEXT.bottom[k]())]),
+    LAW,
+    Zl(`정정: ${fixText(f)} (${fixWhy(f)})`),
+    TAGS,
+  ];
+}
+function scriptLines(D, row) {
+  const late = lateFix(D, row);
+  if (late) return lateLines(D, row, late);
   const total = (D.summary && D.summary.days_total) || SEASON_DAYS, p = isPrep(row), m = moneyOf(D, row.date, p), c = row.change_pct;
   const date = md(row.date), rest = c == null;
   const t = Object.assign({closed: 0, won: 0}, tradesOf(D, row.date, p));
   const fixes = fixesOf(D).filter(f => f.as_of === row.date);
   const result = rest ? (t.closed ? `쉼 · 정리 ${t.closed}건` : '쉼 · 거래 없음') : m ? `${pctOf(c)} · ${usdSigned(m.today)}` : pctOf(c);
+  // 판정 카드 밤(판정 카드 지시 4절) — ① ③ 자막 · 판정 줄(사이트 Verdict 한 줄과 같은 글) · 시작부터 줄(판정 기준 아님) ·
+  // 맨 아래 줄(통과 · 미달) · '다음 기록'(통과 · 보류 — 미달은 기록이 끝난다). ① 둘째 말은 판정 밤에만
+  const vc = !p && vCard(D, row), k = V && V.kind, vw = V ? VTEXT.word(V.nights, V.again) : '';
+  const p2 = x => x == null ? '—' : pct(x, 2);
+  const vsay = !vc ? '' : `${vw} · ${VTEXT.vName[k]}. ` +
+    (k === 'fail' ? VTEXT.vSay.fail(failList(V.gates)) : k === 'hold' ? VTEXT.vSay.hold(md(V.next)) : VTEXT.vSay.pass());
   return [
     `[${BRAND.en} · ${date}] 15초`,
-    `0~3초   ① 자막: "${date} 기록"`,
+    `0~3초   ① 자막: "${date} 기록${!p && vNight(row) ? ` · ${vw}` : ''}"`,
     `4~10초  ② 자막: "${result}"`,
-    `10~15초 ③ 자막: "${NEXT_LINE}"`,
+    vc ? Zl(`10~15초 ③ 자막: "${vw} · ${VTEXT.vName[k]}"`) : `10~15초 ③ 자막: "${NEXT_LINE}"`,
     '',
     '캡션:',
-    `${p ? PREP_DAY(prepDay(row.date)) : `${row.day}일째 / ${total}`}. 오늘 ${pctOf(c)}` + (m ? `, 최종 잔고 ${usdWord(m.now)}.` : '.'),
+    `${p ? PREP_DAY(prepDay(row.date)) : dayLabel(row, total, false)}. 오늘 ${pctOf(c)}` + (m ? `, 최종 잔고 ${usdWord(m.now)}.` : '.'),
     rest ? '자료 못 받음.' : `정리 ${t.closed}건 · 이긴 것 ${t.won} · 진 것 ${t.closed - t.won}.`,
+    ...(vc ? [Zl(vsay), VTEXT.since(p2(V.at.moonlog_pct), p2(V.at.btc_pct)), ...(k === 'hold' ? [] : [Zl(VTEXT.bottom[k]())]),
+              ...(k === 'fail' ? [] : [`${NEXT_LINE}.`])] : []),
     // 다시 시작 한 줄 — 준비 기간 마지막 밤과 새 시즌 1~3일째, 법 줄 바로 위(다시시작 6절)
     ...(PREP && PREP.last && (p || row.day <= 3) ? [RESTART_LINE()] : []),
     LAW,
     ...(D.summary && D.summary.model_swap && row.date >= D.summary.model_swap.date &&
         row.date < addDays(D.summary.model_swap.date, SWAP_DAYS) ? [SWAP_LINE(D.summary.model_swap)] : []),
     // 정정 — 법 줄 바로 아래 한 줄씩(그 밤 나온 것, 둘까지). 해시태그는 늘 맨 끝(디자인 대조 2026-10-15)
-    ...fixes.slice(0, 2).map(f => `정정: ${fixText(f)} (${f.why})`),
+    ...fixes.slice(0, 2).map(f => (f.kind === 'verdict' ? Zl : String)(`정정: ${fixText(f)} (${fixWhy(f)})`)),
     ...(fixes.length > 2 ? [fixMore(fixes.length - 2)] : []),
     TAGS,
-  ].join('\n');
+  ];
 }
 
 /* 글꼴 셋을 실제로 불러왔는가 — 못 불러왔으면 'fallback'(찍지 않는다). LED 는 SVG 라 글꼴 검사 대상이 아니다.
    Instrument Serif 는 글자표(Moonlog 일곱 글자)에만 쓴다(문로그 지시 2절) */
-function fontsOk() {
+function fontsOk(vc) {
   const need = [['400 22px "Instrument Serif"', 'Moonlog'], ['500 10px "IBM Plex Sans KR"', '문로그'],
                 ['700 22px "Gowun Batang"', '0123456789월일 기록'],
                 ['400 20px "Gowun Batang"', '60 Nights 별 개 ' + NEXT_LINE], ['400 12px "IBM Plex Sans KR"', LAW],
                 ['600 12px "IBM Plex Sans KR"', '9,820달러']];
+  // 판정 카드 밤만 — 이름(Gowun 700) · 기준 셋(Plex 11px) · 맨 아래 줄 · 창 '60 Nights'(판정 카드 지시 7절). 그 밖의 밤은 지금 목록 그대로
+  if (vc) need.push(['700 18px "Gowun Batang"', Object.values(VTEXT.vName).join('') + ' 다시 판정'], ['400 11px "IBM Plex Sans KR"', VTEXT.gate.join(' ') + ' ①②③ ' + VTEXT.gate2Tail],
+                    ['600 11px "IBM Plex Sans KR"', '−0123456789.% 넘음 못 넘음 보류'],
+                    ['400 13px "Gowun Batang"', VTEXT.bottom.pass() + VTEXT.bottom.fail() + VTEXT.bottom.hold('0월 0일')],
+                    ['400 19px "Instrument Serif"', '60 Nights 0123456789.–']);
   return Promise.all(need.map(([f, t]) => document.fonts.load(f, t))).then(list => list.every(x => x.length > 0), () => false);
 }
-/* LED 칸 수 = 글자 수(부호 칸 + 글자) — 칸이 빠진 판은 찍지 않는다(디자인 3판 §6) */
-function ledCheck(row) {
+/* LED 칸 수 = 글자 수(부호 칸 + 글자) — 칸이 빠진 판은 찍지 않는다(디자인 3판 §6). 판정 ③ 은 부호 칸 없는 낱말 넉 칸(판정 카드 지시 7절) */
+function ledCheck(row, vc) {
+  if (vc) {
+    const want = ledTokens(VTEXT.vLed[V.kind], false).length, got = document.querySelectorAll('.ledbox .led > svg').length;
+    return want === got ? 'ok' : `bad:${got}/${want}`;
+  }
   if (FRAME !== '1' && FRAME !== '2') return 'none';
   const want = ledTokens(ledFor(row, FRAME), true).length, got = document.querySelectorAll('.ledbox .led > svg').length;
   return want === got ? 'ok' : `bad:${got}/${want}`;
@@ -406,6 +586,9 @@ async function main() {
     const names = ['scene', 'summary', 'equity_daily', 'trades_daily', 'diary'], D = {};
     const got = await Promise.all(names.map(n => fetch(`public/${n}.json`, {cache: 'no-cache'}).then(r => { if (!r.ok) throw new Error(n); return r.json(); })));
     names.forEach((n, i) => { D[n] = got[i]; });
+    // 판정 칸(at_verdict · at_verdict_2)만 weeks.json 에서 — 없거나 못 받으면 판정 없음으로(지금 카드 그대로)
+    D.weeks = await fetch('public/weeks.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : null, () => null).catch(() => null);
+    V = verdictOf(D);
     const sp = D.summary && D.summary.prep, prep = (D.scene && D.scene.prep) || [];
     PREP = sp && sp.from && sp.to ? {from: sp.from, to: sp.to, nights: sp.nights, last: sp.last !== false,
                                      day1: D.summary.season_start || addDays(sp.to, 1)} : null;
@@ -413,16 +596,18 @@ async function main() {
     const rows = (D.scene && D.scene.rows) || [], want = Q.get('date'), all = PREP && !rows.length ? prep : rows;
     const row = want ? [...rows, ...prep].find(r => r.date === want) : all[all.length - 1];
     if (!row || row.day == null) { done({skip: 'prestart', ready: '1'}); return; }            // 시작 전 — 카드를 만들지 않는다
-    if (FRAME === 'script') { $('#card').hidden = true; $('#script').hidden = false; $('#script').textContent = script(D, row); }
+    if (FRAME === 'script') { $('#card').hidden = true; $('#script').hidden = false; $('#script').innerHTML = scriptHtml(D, row); }
     else render(D, row);
-    document.documentElement.dataset.date = row.date;
-    const ok = await fontsOk();
+    const late = lateFix(D, row);
+    document.documentElement.dataset.date = late ? late.as_of : row.date;        // 늦은 미달 밤 묶음은 공개한 밤(P) 폴더로
+    const vc = FRAME === '3' && !isPrep(row) && vCard(D, row);
+    const ok = await fontsOk(vc);
     const img = $('#photo');
     if (img) { try { await img.decode(); } catch (e) { done({fonts: ok ? 'ok' : 'fallback', photo: 'missing', ready: '1'}); return; } }
     let hits = FRAME === 'script' ? [] : safeHits(), tight = '0';
     if (hits.length) { $('#card').classList.add('tight'); tight = '1'; hits = safeHits(); }   // 한 번만 줄여 다시 잰다
     done({fonts: ok ? 'ok' : 'fallback', safe: hits.length ? 'hit:' + hits.join(',') : 'ok', tight,
-          led: FRAME === 'script' ? 'none' : ledCheck(row), face: img ? img.dataset.face : '', ready: '1'});
+          led: FRAME === 'script' ? 'none' : ledCheck(row, vc), face: img ? img.dataset.face : '', ready: '1'});
   } catch (e) {
     done({error: String(e && e.message || e), ready: '1'});
   }

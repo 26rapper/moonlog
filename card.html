@@ -196,6 +196,10 @@ const fixText = f => f.kind === 'btc_week' ? `${md(f.date)} 주 비트코인 ${p
 const fixMore = n => `외 ${n}건 — 사이트 일지에`;
 // 늦은 미달(uncounted_nights n > 0, 지시 3-3) — 까닭 뒤에 '그 사이 공개된 n밤 줄은 남기되 셈에서 뺐다'
 const fixWhy = f => f.why + (f.uncounted_nights > 0 ? ` · 그 사이 공개된 ${f.uncounted_nights}밤 줄은 남기되 셈에서 뺐다` : '');
+// 판정 정정 줄 바로 아래 원고 한 줄 — 숫자(기준 ② · 정리 건수 · 시작부터)는 다시 얼리지 않는다(사이트 얼린 숫자 꼬리표와 같은 조건:
+// 그 판정 밤의 판정 정정 줄일 때만 · 날짜는 판정 밤 값 칸의 끝 = 다시 판정이면 at_verdict_2, 카드 지시 6절 · 마침표 없음)
+const FIX_FROZEN = d => `숫자는 ${d} 판정 날에 센 것(정정 전)`;
+const frozenLine = f => V && V.at && f.kind === 'verdict' && f.date === V.at.to ? [FIX_FROZEN(md(V.at.to))] : [];
 const FIX_SAY = '어제 숫자 정정.';
 const FIX_SAY_WEEK = '비트코인 주간 숫자 정정.';   // 그 밤 정정이 주간 비트코인뿐일 때(어제 숫자가 아니라서)
 
@@ -215,7 +219,8 @@ const VTEXT = {
   bottom: {pass: () => '통과해도 실제 투자로 이어지지 않는다.', fail: () => '미달이면 이 모형은 고치지 않고 끝낸다.',
            hold: d => `30밤 더 센 뒤 ${d}에 다시 판정.`},                     // 카드 ③ 맨 아래 — 보류만 다시 판정 날(지시 3절 표)
   word: (n, again) => again ? '다시 판정' : `${n}밤 판정`,                     // 머리 · ① 가림말 둘째 줄 · 자막의 앞
-  after: '60 Nights · 판정 통과',                                             // 통과 뒤 ③ — 별 수 대신(별은 60개에서 닫혔다, 지시 5절)
+  after: '60 Nights · 판정 통과',                                             // 통과 뒤 ③ — 별 수 대신(별은 판정 밤에서 닫혔다, 지시 5절)
+  extended: '연장전',                                                         // 60 을 넘은 별 — 사이트 별 수와 같은 낱말
   since: (m, b) => `시작부터 ${m} · 비트코인 그냥 들고 있기 ${b}(판정 기준 아님).`,
 };
 // words-allow end
@@ -238,18 +243,19 @@ function verdictOf(D) {
 const vNight = row => !!V && row.date === V.at.to;
 const vCard = (D, row) => vNight(row) || (!!V && fixesOf(D).some(f => f.kind === 'verdict' && f.as_of === row.date));
 /* 날 수 — 판정 밤엔 판정 앞의 꼴(① ② 에서 결과가 날 수로 새지 않게 · 사이트 dayWord 와 같은 규칙). 통과 뒤 '61일째'('/ 60'
-   없음) · 보류 뒤와 다시 판정 밤 '/ 90'(지시 5절). 판정이 없으면 지금 꼴 그대로 */
+   없음) · 보류 뒤와 다시 판정 밤 '/ 90'(지시 5절). 그 밖에 60 을 넘은 밤(300건 연장 · 판정 셈 중 · 연장 판정 밤)도 'n일째' —
+   '60일 중 75일째' 같은 모순 없이 사이트와 같게(기획 (다) 10-24). 60 안의 밤은 지금 꼴 그대로 */
 const dayKind = row => !V ? null : row.date > V.at.to ? V.kind : V.again ? 'hold' : null;
+const longWait = row => row.day > SEASON_DAYS && (dayKind(row) === 'hold' || (!!V && V.again && dayKind(row) !== 'pass'));
 function dayLabel(row, total, clamp) {          // 머리(clamp — 60 에 멈추는 지금 꼴) · 캡션 첫 줄
-  const k = dayKind(row), over = row.day > SEASON_DAYS;
-  if (k === 'pass' && over) return `${row.day}일째`;
-  if (over && (k === 'hold' || (V && V.again))) return `${row.day}일째 / ${SEASON_MAX}`;
+  if (longWait(row)) return `${row.day}일째 / ${SEASON_MAX}`;
+  if (row.day > SEASON_DAYS) return `${row.day}일째`;
   return `${clamp ? Math.min(row.day, total) : row.day}일째 / ${total}`;
 }
 function dayWordOf(row, total) {                // ① 날짜 줄
-  const k = dayKind(row), over = row.day > SEASON_DAYS;
-  if (k === 'pass' && over) return `${row.day}일째`;
-  return `${over && (k === 'hold' || (V && V.again)) ? SEASON_MAX : total}일 중 ${row.day}일째`;
+  if (longWait(row)) return `${SEASON_MAX}일 중 ${row.day}일째`;
+  if (row.day > SEASON_DAYS) return `${row.day}일째`;
+  return `${total}일 중 ${row.day}일째`;
 }
 
 /* 그날 거래 줄(정리 · 이긴 것) — 원고 캡션 둘째 줄 */
@@ -426,6 +432,7 @@ function render(D, row) {
   const dayWord = p ? PREP_DAY(prepDay(row.date)) : dayWordOf(row, total), lit0 = p ? 0 : row.day;
   const t = tone(row.weather), lit = c == null ? LED_REST : LED_COLOR[t];
   const vc = FRAME === '3' && !p && vCard(D, row), passAfter = !p && dayKind(row) === 'pass' && row.day > SEASON_DAYS;
+  const shut = passAfter ? V.nights : 0;          // 통과 뒤 별은 판정 밤에서 닫힌다(60밤 판정 60 · 300건 연장 판정 61~90, 기획 (나) 10-24)
   const sky = SKY_TINT[FRAME === '1' || vc ? 'clear' : row.weather] || SKY_TINT.clear;
   $('#card').style.setProperty('--sky-a', sky[0]);
   $('#card').style.setProperty('--sky-b', sky[1]);
@@ -436,7 +443,7 @@ function render(D, row) {
     h += win(row.weather, 'deadpan', 'fogged', `${esc(date)} 기록` + (vNight(row) ? `<br>${esc(VTEXT.word(V.nights, V.again))}` : '')) +
       `<div class="body"><span class="eb">${esc(date)} ${dow(row.date)}요일 · ${esc(dayWord)}</span>` +
       `<span class="ledbox">${ledHTML(LED_DARK, null)}</span></div>` +
-      `<div class="stars">${stars(passAfter ? SEASON_DAYS : Math.max(lit0 - 1, 0), false)}</div>`;   // 통과 뒤 별은 60 에서 닫힌다
+      `<div class="stars">${stars(passAfter ? shut : Math.max(lit0 - 1, 0), false)}</div>`;   // 통과 뒤 별은 판정 밤에서 닫힌다
   } else if (vc) {
     // ③ 판정(지시 3절) — 창 = 닫힌 초승달 별자리 + 왼쪽 위 '60 Nights · 날짜', 몸 = LED 낱말 + 이름 · 기준 셋 · 맨 아래 한 줄.
     // 아래 장식은 비운다. 그 밤 정정 두 줄은 그리지 않는다(정정은 캡션 줄로만)
@@ -453,14 +460,17 @@ function render(D, row) {
       `<span class="vlaw">${esc(VTEXT.bottom[k](md(V.next)))}</span></div>`;
   } else if (FRAME === '3') {
     // ③ 60 Nights · 별 n개 / 다음 기록 내일 밤 9시 20분(글규칙 데이터우선 2절 · 영문 제목 A). 위 작은 줄은 날짜 — 별 수를 두 번 쓰지 않게.
-    // 통과 뒤는 VTEXT.after 한 줄(별은 60개에서 닫혔다 · 오늘 고리 없음) · 보류 뒤는 '/ 90' 까지 연장 별(판정 카드 지시 5절)
+    // 통과 뒤는 VTEXT.after 한 줄(별은 판정 밤에서 닫혔다 · 오늘 고리 없음) · 보류 뒤는 '/ 90' 까지 연장 별(판정 카드 지시 5절).
+    // 그 밖에 60 을 넘은 밤(300건 연장 · 판정 셈 중)은 '별 60개 · +n 연장전' — 사이트 별 수 '60 / 60 · +n 연장전' 과 같은 셈(기획 (다))
     const cap = dayKind(row) === 'hold' && row.day > SEASON_DAYS ? SEASON_MAX : total;
+    const starWord = p ? '60 Nights · 별 0개' : cap === total && row.day > SEASON_DAYS ? `60 Nights · 별 ${SEASON_DAYS}개 · +${row.day - SEASON_DAYS} ${VTEXT.extended}`
+      : `60 Nights · 별 ${Math.min(row.day, cap)}개`;
     h += win(row.weather, face, '') +
       `<div class="body"><span class="eb">${esc(date)} ${dow(row.date)}요일</span>` +
-      `<span class="next n1">${p && PREP.last ? esc(`60 Nights · ${md(PREP.day1)} 밤에 첫 별`) : passAfter ? `<span data-words-allow="verdict">${esc(VTEXT.after)}</span>` : `60 Nights · 별 ${p ? 0 : Math.min(row.day, cap)}개`}</span>` +
+      `<span class="next n1">${p && PREP.last ? esc(`60 Nights · ${md(PREP.day1)} 밤에 첫 별`) : passAfter ? `<span data-words-allow="verdict">${esc(VTEXT.after)}</span>` : esc(starWord)}</span>` +
       '<span class="next n2">다음 기록 <br>내일 밤 9시 20분</span>' +
       '<span class="money cta">미리 찍기 · 프로필 링크</span>' + fixCard(D, row) + '</div>' +
-      `<div class="stars">${passAfter ? stars(SEASON_DAYS, false) : stars(lit0, !p)}</div>`;
+      `<div class="stars">${passAfter ? stars(shut, false) : stars(lit0, !p)}</div>`;
   } else {
     // ② 결과 — LED + 금액 줄만(생성 글 자막은 지웠다, 글규칙 데이터우선 1절)
     h += win(row.weather, face, '') +
@@ -469,7 +479,7 @@ function render(D, row) {
       `<span class="ledbox" role="img" aria-label="${esc(pctOf(c))}">${ledHTML(ledStr(c), lit)}</span>` +
       (m ? `<span class="money">${esc(usdWord(m.start))}로 시작한 모의 투자 → 지금 <b>${esc(usdWord(m.now))}</b><br>` +
            `오늘 <b class="${c == null ? '' : t}">${esc(usdSigned(m.today))}</b></span>` : '') + '</div>' +
-      `<div class="stars">${passAfter ? stars(SEASON_DAYS, false) : stars(lit0, false)}</div>`;
+      `<div class="stars">${passAfter ? stars(shut, false) : stars(lit0, false)}</div>`;
   }
   $('#card').innerHTML = h + safeHtml();
   $('#card').classList.toggle('has-fix', FRAME === '3' && !vc && fixesOf(D).some(f => f.as_of === row.date));
@@ -502,6 +512,7 @@ function lateLines(D, row, f) {     // 시안 판정카드 lateScript 꼴 — �
     ...(k === 'hold' ? [] : [Zl(VTEXT.bottom[k]())]),
     LAW,
     Zl(`정정: ${fixText(f)} (${fixWhy(f)})`),
+    ...frozenLine(f),
     TAGS,
   ];
 }
@@ -536,7 +547,7 @@ function scriptLines(D, row) {
     ...(D.summary && D.summary.model_swap && row.date >= D.summary.model_swap.date &&
         row.date < addDays(D.summary.model_swap.date, SWAP_DAYS) ? [SWAP_LINE(D.summary.model_swap)] : []),
     // 정정 — 법 줄 바로 아래 한 줄씩(그 밤 나온 것, 둘까지). 해시태그는 늘 맨 끝(디자인 대조 2026-10-15)
-    ...fixes.slice(0, 2).map(f => (f.kind === 'verdict' ? Zl : String)(`정정: ${fixText(f)} (${fixWhy(f)})`)),
+    ...fixes.slice(0, 2).flatMap(f => [(f.kind === 'verdict' ? Zl : String)(`정정: ${fixText(f)} (${fixWhy(f)})`), ...frozenLine(f)]),
     ...(fixes.length > 2 ? [fixMore(fixes.length - 2)] : []),
     TAGS,
   ];
@@ -547,7 +558,7 @@ function scriptLines(D, row) {
 function fontsOk(vc) {
   const need = [['400 22px "Instrument Serif"', 'Moonlog'], ['500 10px "IBM Plex Sans KR"', '문로그'],
                 ['700 22px "Gowun Batang"', '0123456789월일 기록'],
-                ['400 20px "Gowun Batang"', '60 Nights 별 개 ' + NEXT_LINE], ['400 12px "IBM Plex Sans KR"', LAW],
+                ['400 20px "Gowun Batang"', '60 Nights 별 개 · +' + VTEXT.extended + ' ' + NEXT_LINE], ['400 12px "IBM Plex Sans KR"', LAW],
                 ['600 12px "IBM Plex Sans KR"', '9,820달러']];
   // 판정 카드 밤만 — 이름(Gowun 700) · 기준 셋(Plex 11px) · 맨 아래 줄 · 창 '60 Nights'(판정 카드 지시 7절). 그 밖의 밤은 지금 목록 그대로
   if (vc) need.push(['700 18px "Gowun Batang"', Object.values(VTEXT.vName).join('') + ' 다시 판정'], ['400 11px "IBM Plex Sans KR"', VTEXT.gate.join(' ') + ' ①②③ ' + VTEXT.gate2Tail],

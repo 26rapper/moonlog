@@ -86,6 +86,7 @@ const RELEASE = {h: 21, m: 20};     // 매일 이 한국 시각쯤 새 결과(�
 const FILES = ['site', 'summary', 'equity_daily', 'trades_daily', 'checks', 'thermometer', 'lab', 'diary', 'weeks', 'scene'];
 const SEASON_DAYS = 60;
 const SEASON_MAX = 90;               // 연장 끝(사전등록 5-1 — 300건 미만이면 300건까지, 길어도 90밤) · 보류 날짜 줄 '90일 중'
+const SEASON_TRADES = 300;           // 판정 거래 하한(사전등록 5-1) — 90번째 밤 판정이 이보다 적으면 '못 채운 채'
 const FLAT = 0.10, BIG = 1.00;      // 장면 값 문턱 — tools.public_export 의 FLAT·BIG 과 같아야 한다(시험)
 /* 이 기기에만 — 마지막으로 연 날 · 찍은 답(날짜별) · 맞힌 날 연속 · 연 날 연속 · 판정한 날마다 맞힘과 그때 연속(지난 기록 보기) */
 const KEYS = {opened: 'kong.opened', guess: 'kong.guess', gStreak: 'kong.guessStreak',
@@ -176,8 +177,11 @@ const TEXT = {
   vGate: ['거래 한 번당 평균 손익 · 지난 시험 값보다 크게 모자라지 않음', '가장 많이 빠졌을 때', '모형이 정한 대로 주문한 비율 · 95% 이상'],
   vGate2Tail: '40% 안 · 파산 없음',
   vMark: {pass: '넘음', fail: '못 넘음', hold: '보류'},
-  // 기준 셋 아래 — 60밤에 300건을 넘었으면 '넘어', 300건 연장 뒤(61~90밤)면 '채워'(디자인 2-6 · 기획 10-24)
+  // 기준 셋 아래 — 60밤에 300건을 넘었으면 '넘어', 300건 연장 뒤(61~90밤)면 '채워'(디자인 2-6 · 기획 10-24). 90번째 밤에
+  // 300건을 못 채우고 판정한 판(nights == 90 && closed < 300)만 사실 그대로 '못 채운 채'(기획 (가) · 디자인 대조 10-24 —
+  // 52 check_verdict 가 그 밤만 허용). 고르는 규칙은 footOf
   vFoot: (n, nights) => nights > 60 ? `정리 ${n}건 · 300건을 채워 ${nights}밤에 판정` : `정리 ${n}건 · 300건을 넘어 ${nights}밤에 판정`,
+  vFootShort: (n, nights) => `정리 ${n}건 · 300건을 못 채운 채 ${nights}밤에 판정`,
   vFootAgain: (n, d) => `정리 ${n}건 · ${d} 보류 뒤 30밤 더 세어 판정`,
   vRecHead: '기준 아님 · 적어 두는 값',
   vBarDue: n => `${n}밤 판정 · 열면 보임`, vBarNight: (n, name) => `${n}밤 판정 · ${name}`, vGo: '판정 보기',
@@ -194,6 +198,8 @@ const TEXT = {
           hold: nx => `미리 적은 대로 30밤 더 센 뒤 ${nx}에 다시 판정한다.`},
   // 다시 판정 밤부터 Verdict 맨 아래 한 줄 — 첫 판정(보류)은 at_verdict 그대로(지시 2-7 · 기획 10-24)
   vFirst: (d, p) => `${d} 판정 · 보류 · 기준 ① 보류 · 시작부터 ${p}`,
+  // 판정 낱말이 정정되면 얼린 숫자(관문 ② · 정리 건수 · 적어 두는 값)는 처음 값 그대로다 — 그 묶음 위에 꼬리표(기획 10-24)
+  vFrozen: d => `${d} 판정 날에 센 숫자(정정 전)`,
   // 늦은 미달 — 셈에 안 들어간 밤(지시 3-3): Past Logs 꼬리표 · 그날 기록 보기 위 줄 · 별 캡션
   uncTag: (a, b) => `판정 뒤 · 셈에 안 들어감 · ${a}–${b}`, uncWord: '셈에 안 들어감', uncBack: '마지막 기록으로',
   uncCap: (d, p) => `${d} · 셈에 안 들어감 · ${p}`,
@@ -886,14 +892,18 @@ function capText(rows, i, today = true) {
          `${act ? ` <small class="act">· ${esc(act)}</small>` : ''}</b>`;
 }
 function renderConstel() {
-  // 판정 뒤 이어짐 · 통과는 60 에서 닫힌 채(61번째부터는 Past Logs) · 멈춤은 마지막 별에 고리 없이(지시 3-1 · 3-2)
+  // 판정 뒤 이어짐 · 통과는 판정 밤에서 닫힌 채(그 다음 밤부터는 Past Logs) · 멈춤은 마지막 별에 고리 없이(지시 3-1 · 3-2).
+  // 판정 밤 = at_verdict.nights — 60밤 판정은 60, 300건 연장 판정은 61~90(연장 별까지, 기획 (나) 10-24)
   // (보류 뒤는 지금처럼 바깥 둘레 연장 별 — 오늘 별 고리 · 캡션도 그대로)
   const passAfter = svGoing() && SV.kind === 'pass', closed = passAfter || svStop();
-  const el = $('#kongjari'), n0 = total(), rows = ((D.scene && D.scene.rows) || []).slice(0, passAfter ? MOON.N : MOON.MAX), n = rows.length;
+  const el = $('#kongjari'), n0 = total(), rows = ((D.scene && D.scene.rows) || []).slice(0, passAfter ? SV.nights : MOON.MAX), n = rows.length;
   const due = STATE === 'arrived' && n > 0 && !(svVerdict() && SV.after);
   const shut = svOpen() && n >= MOON.N;          // 60번째 별이 떴다 — 달이 닫힌다: 그림자 .06/.015 → .11/.035 · 테두리 .06 → .16(지시 2-3)
   const past60 = !!SV && n > MOON.N;                   // 60 넘은 별(300건 연장 · 셈 중 · 보류 뒤 · 연장 판정) — '60 / 60 · +n 연장전'(대조 ③)
-  const ext = (D.scene && D.scene.season_verdict === 'extended') || past60 ? ` <em class="ext">${esc(TEXT.extended)}</em>` : '';
+  // '연장전' 주황은 세는 중(300건 연장 · 보류 뒤)에만 — 달이 닫힌 뒤(판정 밤 연 뒤 · 판정 뒤 · 멈춤)엔 머리 글과 같은 색(.done ·
+  // 끝난 연장이 아직 도는 것처럼 읽히지 않게, 판정 지시 2-6 · 디자인 재대조 10-26)
+  const extDone = shut && SV.kind !== 'hold';
+  const ext = (D.scene && D.scene.season_verdict === 'extended') || past60 ? ` <em class="ext${extDone ? ' done' : ''}">${esc(TEXT.extended)}</em>` : '';
   $('#starCount').innerHTML = (past60 ? `${MOON.N} / ${n0} · +${n - MOON.N}` : `${n} / ${n0}`) + ext;
   // 그리는 차례(초승달 지시 B): 달 둘레 빛 → 달 그림자 → 하늘 먼지 → 아직 안 뜬 자리 → 이은 선 → 뜬 별 → 오늘 별 고리
   let s = '<defs><radialGradient id="sg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff3dc" stop-opacity=".55"></stop>' +
@@ -922,10 +932,11 @@ function renderConstel() {
     if (last && !closed) s += `<circle class="pulse" cx="${x}" cy="${y}" r="6" fill="none" stroke="#fff3dc" stroke-width=".8"></circle>`;
     s += `<circle class="hit" cx="${x}" cy="${y}" r="11" data-star="${i}" data-w="${rows[i].weather}" tabindex="0" role="button" aria-label="${esc(md(rows[i].date))} 별"></circle>`;
   }
-  // 늦은 미달(지시 3-3) — 판정 밤이 60 을 넘은 판(300건 연장 판정)이면 셈에 안 든 밤의 연장 별 자리에 바랜 별(날씨 색 · 연장
-  // 별 크기 · .35 · 빛 없음, 디자인 대조 ⑤), 누르면 캡션. 60밤 판정이면 그 밤들은 달 밖이라 그리지 않는다.
-  // 300건 연장 판정의 자료 꼴(판정 밤 · 판정 창이 60 을 넘는가)은 52 · 기획 결정 대기다 — 지금 내보내기는 60밤에 묶는다
-  if (n > MOON.N) uncRows().slice(0, MOON.MAX - n).forEach((r, j) => {
+  // 늦은 미달(지시 3-3) — '보류 → 미달'(그 판정 밤 정정 줄의 전 낱말 hold)만 셈에 안 든 밤의 연장 별 자리에 바랜 별(날씨 색 ·
+  // 연장 별 크기 · .35 · 빛 없음, 디자인 대조 ⑤), 누르면 캡션. 보류 뒤 이어 센 밤이 연장 별로 떠 있던 판이라서다. 통과 → 미달은
+  // 60밤 판정이든 300건 연장 판정(61~90밤)이든 셈 밖 밤이 달 밖이라 그리지 않는다(Past Logs 셈 밖 무리 · Orbit 점선만, 디자인 대조 10-24)
+  const fadeUnc = svStop() && !!SV.at && (verdictFix(SV.at.to) || {}).verdict_before === 'hold';
+  if (fadeUnc) uncRows().slice(0, MOON.MAX - n).forEach((r, j) => {
     const [x, y] = xy(n + j);
     const st = starOf(r.weather);
     s += `<circle class="unc" cx="${x}" cy="${y}" r="${(st.r * 0.6).toFixed(2)}" fill="${st.c || '#8b8279'}" opacity=".35"></circle>` +
@@ -939,9 +950,9 @@ function renderConstel() {
   const note = $('#prepNote');
   note.hidden = !PREP || PREP_MODE;
   note.textContent = note.hidden ? '' : TEXT.prepNote;
-  const after = $('#moonNote');                   // 통과 뒤 — 61번째 밤부터는 Past Logs 에(준비 기간 줄 꼴)
+  const after = $('#moonNote');                   // 통과 뒤 — 판정 다음 밤부터는 Past Logs 에(준비 기간 줄 꼴)
   after.hidden = !passAfter;
-  after.textContent = passAfter ? TEXT.moonAfter(MOON.N + 1) : '';
+  after.textContent = passAfter ? TEXT.moonAfter(SV.nights + 1) : '';
   // 60번째 별의 날 = 1일째 + 59일(1일째 = 판정 시작 봉을 지난 첫 하루 — summary.started 는 그 봉의 날이라 하루 앞이다).
   // 판정이 보이는 밤부터는 내린다 — 약속이 지켜졌다(지시 2-3)
   const day1 = rows.length ? rows[0].date : PREP && PREP.last ? PREP.day1 : null;
@@ -954,7 +965,7 @@ function showStar(e) {
   const u = e.target.closest('[data-unc]');
   if (u) { const r = uncRows()[+u.getAttribute('data-unc')]; if (r) $('#starCap').innerHTML = `<span>${esc(TEXT.uncCap(md(r.date), pctOf(r.change_pct)))}</span>`; return; }
   const h = e.target.closest('[data-star]');
-  const shown = D.scene.rows.slice(0, svGoing() && SV.kind === 'pass' ? MOON.N : MOON.MAX);
+  const shown = D.scene.rows.slice(0, svGoing() && SV.kind === 'pass' ? SV.nights : MOON.MAX);
   if (h) $('#starCap').innerHTML = capText(shown, +h.getAttribute('data-star'), !((svGoing() && SV.kind === 'pass') || svStop()));
 }
 /* 지난 밤들 — 필름 띠(디자인 지시 C++절, 시안 15판): 칸 상자 없이 밤마다 세로 사진(그날 얼굴, 콩 전신) + 날짜 `10.28` + 퍼센트.
@@ -1069,8 +1080,9 @@ function renderFlow() {
 }
 /* Last 7 Nights — 늘 오늘 포함 최근 7밤(디자인 7밤 지시 · 오너 "한 주 총합이어야"). 두 쪽 % 는 밤 배치가 같은 창으로 센
    weeks.json 의 last7 그대로(화면은 따로 세지 않는다). 승패는 끝난 달력 주(월~일) rows 로 지금처럼 센다 */
-const mdDot = s => { const m = String(s || '').match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? `${+m[1]}.${+m[2]}` : ''; };
-const rangeText = L => `${mdDot(L.from)} ~ ${mdDot(L.to)} · ${L.nights}${TEXT.nightsWord}`;
+// 범위 줄(Since Night 1 · Verdict)도 날짜 꼴은 dotDate 하나(두 자리 날 '11.01') — 앞 0 을 뗀 '11.1' 은 Past Logs 와 한 화면에서
+// 갈리고 수로도 읽혀 맞췄다(기획 결정 2026-10-26)
+const rangeText = L => `${dotDate(L.from)} ~ ${dotDate(L.to)} · ${L.nights}${TEXT.nightsWord}`;
 function renderDuel() {
   const el = $('#duel'), wk = (D.weeks && D.weeks.rows) || [], L = D.weeks && D.weeks.since_start;
   // 판정 밤 · 멈춤엔 숨긴다 — Verdict 의 '적어 두는 값' 과 같은 수를 두 번 쓰지 않는다(지시 2-2 · 3-2). 이어짐엔 다시 지금 값
@@ -1151,6 +1163,13 @@ function failList(g) {               // 못 넘은 것만 ①·② 로 잇고 �
   const k = ['c', 'b', 'd'].map((x, i) => g[x] === 'fail' ? i : -1).filter(i => i >= 0);
   return k.length ? k.map(i => V_NO[i]).join('·') + V_JOSA[k[k.length - 1]] : '';
 }
+/* 기준 셋 아래 줄 — 다시 판정이면 보류 뒤 30밤, 90번째 밤에 300건을 못 채운 판이면 '못 채운 채', 아니면 넘어 · 채워 */
+function footOf(sv, a, n) {
+  if (sv.again) return TEXT.vFootAgain(n, md(sv.first.to));
+  return sv.nights === SEASON_MAX && a.closed != null && a.closed < SEASON_TRADES ? TEXT.vFootShort(n, sv.nights) : TEXT.vFoot(n, sv.nights);
+}
+/* 그 판정 밤(날짜)의 판정 정정 줄 — 여럿이면 마지막(얼린 숫자 꼬리표 · 보류 → 미달 바랜 별이 같이 읽는다) */
+const verdictFix = day => fixesOf(D).filter(f => f.kind === 'verdict' && f.date === day).slice(-1)[0] || null;
 let V_ANIM = false;                   // 판정 밤 연 뒤 한 번만(지시 3-2)
 function renderVerdict() {
   const el = $('#verdict');
@@ -1167,7 +1186,7 @@ function renderVerdict() {
   const say = k === 'fail' ? TEXT.vSay.fail(failList(g)) : k === 'hold' ? TEXT.vSay.hold(md(SV.next)) : TEXT.vSay.pass();
   const st = D.summary && D.summary.started, ruleDay = st ? `${st.slice(0, 4)}년 ${md(st)}` : '';
   const n = veil || a.closed == null ? '—' : a.closed.toLocaleString('en-US'), first = SV.first;
-  const foot = SV.again ? TEXT.vFootAgain(n, md(first.to)) : TEXT.vFoot(n, SV.nights);
+  const foot = footOf(SV, a, n), vfix = !veil && verdictFix(a.to);
   el.innerHTML = `<div class="row"><h2>${esc(TEXT.vTitle)}</h2></div>` +
     `<p class="range" id="verdictRange">${esc(rangeText(a))}</p>` +
     `<div class="vtop"><div class="numrow" id="vNum" role="img" aria-label="${esc(veil ? '' : TEXT.vName[k])}">` +
@@ -1176,7 +1195,11 @@ function renderVerdict() {
     `<span class="vname">${veil ? '' : esc(TEXT.vName[k])}</span></div>` +
     `<div class="vbody${veil ? ' veiled' : ''}"${veil ? ' aria-hidden="true"' : ''}>` +
     (veil ? '' : `<p class="vsay" id="verdictSay">${esc(say)}</p>`) +
-    `<div class="gates"><span class="gh">${esc(TEXT.vGateHead(ruleDay))}</span>` +
+    // 판정 정정 뒤 — 숫자는 다시 얼리지 않는다(규약). 정정 줄은 판정 한 줄 바로 아래(판정 이름 예외 자리), 꼬리표는 점선 아래
+    // 기준 셋 첫 줄(디자인 대조 10-24 — 한 줄 아래면 '(정정 전)' 이 새 판정 문장에 붙어 읽힌다)
+    (vfix ? `<p class="vfix" id="verdictFix" data-words-allow="verdict"><b>${esc(TEXT.fixWord)}</b> · ${esc(fixText(vfix))} · ${esc(fixWhy(vfix))}</p>` : '') +
+    `<div class="gates">${vfix ? `<span class="vft" id="verdictFrozen">${esc(TEXT.vFrozen(md(a.to)))}</span>` : ''}` +
+    `<span class="gh">${esc(TEXT.vGateHead(ruleDay))}</span>` +
     `<span class="gi">${V_NO[0]}</span><span class="gt">${esc(TEXT.vGate[0])}</span>${mark(g.c)}` +
     `<span class="gi">${V_NO[1]}</span><span class="gt">${esc(TEXT.vGate[1])}${mdd} · ${esc(TEXT.vGate2Tail)}</span>${mark(g.b)}` +
     `<span class="gi">${V_NO[2]}</span><span class="gt">${esc(TEXT.vGate[2])}</span>${mark(g.d)}` +

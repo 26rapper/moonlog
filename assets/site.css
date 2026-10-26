@@ -141,6 +141,7 @@ details > div .fix { color: var(--ink); }
 .row span { font-size: 13px; color: var(--ink-2); }
 .sub { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.6; }
 .ext { font-style: normal; color: var(--down); margin-left: 4px; }
+.ext.done { color: inherit; }       /* 달이 닫힌 뒤 — 머리 '60 / 60 · +n' 과 같은 색(주황은 세는 중에만) */
 
 /* 60 Nights — 초승달 별자리. 둥근 상자 · 테두리 · 바탕 없이 밤하늘 위에 바로, 섹션 폭에 가득(디자인 초승달 지시 B) */
 .moon { position: relative; width: 100%; }
@@ -255,6 +256,11 @@ details > div .fix { color: var(--ink); }
 .vrec { display: flex; flex-direction: column; gap: 12px; padding-top: 14px; border-top: 1px solid var(--hair); }
 .vrec .vh { font-size: 11.5px; color: var(--muted); }
 .vlaw { margin: 0; font-size: 13px; color: var(--ink-2); }
+/* 판정 정정 뒤(디자인 대조 10-24) — 정정 줄은 판정 한 줄 아래(첫 화면 정정 줄 꼴 · 12.5px), 얼린 숫자 꼬리표는 점선 아래
+   기준 셋 첫 줄(11.5px muted · 머리 줄과 틈 4px = row-gap 9 − 5) */
+.vfix { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-2); }
+.vfix b { color: #fff3dc; font-weight: 700; }
+.gates .vft { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); margin-bottom: -5px; }
 .vbook { color: var(--ink); }       /* Logbook How it works 맨 위 판정 한 단락(지시 2-4) */
 /* 다시 판정 밤부터 — 첫 판정(보류)을 가는 줄(크림 10%) 위 한 줄로만, LED 없이(지시 2-7) */
 .vfirst { margin: 0; padding-top: 12px; border-top: 1px solid rgba(243,238,231,.10); font-size: 12px; line-height: 1.5;

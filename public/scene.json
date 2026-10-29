@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-28",
+ "as_of": "2026-10-29",
  "season_verdict": null,
  "rows": [
   {
@@ -165,6 +165,18 @@
    "change_pct": -0.92,
    "weather": "rain",
    "pose": "melt",
+   "act": "done",
+   "sprout": 1,
+   "events": [
+    "vs_win"
+   ]
+  },
+  {
+   "date": "2026-10-29",
+   "day": 15,
+   "change_pct": 0.29,
+   "weather": "clear",
+   "pose": "sip",
    "act": "done",
    "sprout": 1,
    "events": [

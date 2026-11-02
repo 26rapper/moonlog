@@ -120,10 +120,11 @@ const FACE_SRC = f => `assets/face/${f}.webp`;
 const FACE_OF = {clear_star: 'rock', clear: 'smug', cloudy: 'deadpan', rain: 'angry', storm: 'cry', closed: 'deadpan'};
 const FACE_WORD = {rock: '락 손', smug: '씩 웃음', deadpan: '무표정', angry: '뿔남', cry: '울음'};
 const faceOf = w => FACE_OF[w] || 'deadpan';
+const plainDay = w => FACE_OF[w] === 'deadpan';
 const SKY_TINT = {clear: ['#0c0a09', '#17110c'], clear_star: ['#0d0a08', '#1f160c'], cloudy: ['#0c0a09', '#141110'],
                   rain: ['#0a0908', '#110e0c'], storm: ['#080706', '#0c0a09'], closed: ['#0b0908', '#100d0b']};
-/* 사진에 거는 빛(3판-b) — ② ③ 만(① 은 흐린 무표정). 채도는 건드리지 않는다. 사이트와 같은 줄 */
-const LIGHT = {rain: 0.9, storm: 0.8, closed: 0.78};
+/* 사진에 거는 빛(3판-b) — ② ③ 만(① 은 흐린 무표정). 채도는 건드리지 않는다. 사이트와 같은 줄 · 무표정 날(구름 · 쉼)은 원본(11-01) */
+const LIGHT = {rain: 0.9, storm: 0.8};
 /* 고정 문구 — 데이터 우선(디자인 글규칙 데이터우선 2 · 3절). 날짜 · 수는 그날 공개 값에서만 */
 const NEXT_LINE = '다음 기록 내일 밤 9시 20분';
 const TAGS = '#Moonlog #문로그';
@@ -291,7 +292,7 @@ function sd(seed) { return () => { seed = (seed * 16807) % 2147483647; return se
 function weather(kind, fog) {
   const r = sd(31), inK = (x, y) => x > WW * KBOX.x0 && x < WW * KBOX.x1 && y > WH * KBOX.y0 && y < WH * KBOX.y1;
   let s = `<svg viewBox="0 0 ${WW} ${WH}" aria-hidden="true">`, i;
-  if (fog) return s + '</svg>';
+  if (fog || plainDay(kind)) return s + '</svg>';              // 무표정 날(구름 · 쉼)은 원본 사진 그대로(오너 2026-11-01)
   if (kind === 'rain' || kind === 'storm') {
     // 3판-b — 푸른 막은 지웠다. 빗줄기는 따뜻한 흰색(236,228,218) · 굵기 비 0.9 · 폭우 1.2 · 투명도 비 0.10~0.32 · 폭우 0.14~0.40
     for (i = 0; i < (kind === 'storm' ? 130 : 80); i++) {

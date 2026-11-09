@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-08",
+ "as_of": "2026-11-09",
  "rows": [
   {
    "week_start": "2026-10-12",
@@ -24,20 +24,26 @@
    "kong_pct": 6.43,
    "btc_pct": -2.55,
    "trades": 125
+  },
+  {
+   "week_start": "2026-11-09",
+   "kong_pct": 2.83,
+   "btc_pct": -2.11,
+   "trades": 19
   }
  ],
  "last7": {
-  "from": "2026-11-02",
-  "to": "2026-11-08",
+  "from": "2026-11-03",
+  "to": "2026-11-09",
   "nights": 7,
-  "moonlog_pct": 6.43,
-  "btc_pct": -2.55
+  "moonlog_pct": 5.97,
+  "btc_pct": -4.52
  },
  "since_start": {
   "from": "2026-10-15",
-  "to": "2026-11-08",
-  "nights": 25,
-  "moonlog_pct": 14.71,
-  "btc_pct": -8.97
+  "to": "2026-11-09",
+  "nights": 26,
+  "moonlog_pct": 17.96,
+  "btc_pct": -10.88
  }
 }

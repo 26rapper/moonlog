@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-12",
+ "as_of": "2026-11-13",
  "season_verdict": null,
  "rows": [
   {
@@ -344,6 +344,19 @@
    "events": [
     "new_high",
     "vs_win"
+   ]
+  },
+  {
+   "date": "2026-11-13",
+   "day": 30,
+   "change_pct": 0.24,
+   "weather": "clear",
+   "pose": "sip",
+   "act": "done",
+   "sprout": 2,
+   "events": [
+    "day30",
+    "new_high"
    ]
   }
  ],

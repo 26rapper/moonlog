@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-18",
+ "as_of": "2026-11-19",
  "rows": [
   {
    "date": "2026-10-14",
@@ -324,6 +324,15 @@
    "day_low_hh": 5,
    "day_high_usd": 137,
    "day_high_hh": 21
+  },
+  {
+   "date": "2026-11-19",
+   "pct": 15.0,
+   "usd": 11500,
+   "day_low_usd": -272,
+   "day_low_hh": 17,
+   "day_high_usd": -20,
+   "day_high_hh": 9
   }
  ],
  "prep": []

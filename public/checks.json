@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-18",
+ "as_of": "2026-11-19",
  "rows": [
   {
    "date": "2026-10-13",
@@ -324,6 +324,15 @@
    "cost_assumed": 0.072,
    "cost_ratio": 1.09,
    "maker_fill": 93.8
+  },
+  {
+   "date": "2026-11-18",
+   "same_call": 100.0,
+   "same_call_7d": 100.0,
+   "cost_rt": 0.258,
+   "cost_assumed": 0.075,
+   "cost_ratio": 3.42,
+   "maker_fill": 50.0
   }
  ]
 }

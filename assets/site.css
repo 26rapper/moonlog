@@ -101,7 +101,7 @@ button:focus-visible { outline: 2px solid var(--up); outline-offset: 3px; }
             box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 18%, transparent); }
 .up { color: var(--up); } .down { color: var(--down); } .flat { color: var(--ink-2); }
 .blur { filter: blur(14px); opacity: .7; user-select: none; }
-/* 도착의 금액 줄 — 숫자만 흐리게. '1만 달러로 시작한 모의 투자' 는 첫 화면에서 읽혀야 한다(기획 조건 ② — '최종점검' 과 '모의' 가
+/* 도착의 금액 줄 — 숫자만 흐리게. '1만 달러로 시작한 모의 투자' 는 첫 화면에서 읽혀야 한다(기획 조건 ② — 머리 줄 '60일 시험' 과 '모의' 가
    접지 않은 첫 화면에 같이). 숫자는 전날 끝 값이라 누설은 아니지만 흐림의 결은 그대로 */
 .money.blur { filter: none; opacity: 1; }
 .money.blur b { filter: blur(9px); opacity: .7; }
